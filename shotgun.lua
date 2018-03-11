@@ -11,14 +11,18 @@
         mods can be enabled or disabled by running "shotgun mods"
 
     generic modding:
-        mods consist of several bots which override the default list of bots. all bots consist of a single function which is run every turn.
-        a mod can have more than one bot, but it must specify the function names for each of the bots in two tables.
+        all bots consist of a single function which is run every turn. a mod is simply a collection of bots tied together by two tables.
         aiList is a list of numbers with the name that each bot should be assigned, and aiFunctions links the bot names to their functions.
-        here is an example:
+        in addition, there must be a global variable named modName which specifies the name of the mod as shown in the mod loader.
+        here is an example of a basic mod:
+            local function testBotFunction()
+                return 1 -- always reload
+            end
+
+            modName = 'Testing Mod'
             aiList = {"Test Bot"}
             aiFunctions = {["Test Bot"] = testBotFunction}
-        in this case, testBotFunction is a bot function, and it will be listed as Test Bot when selecting a bot to fight.
-        in addition, mods must define a global variable called "modName" for usage in the mod loader
+        in this case, testBotFunction is a bot function which will always reload, and it will be listed as Test Bot when selecting a bot to fight.
 
     adding custom bots:
         bot functions are passed the following arguments:
@@ -392,17 +396,19 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                                     term.clear()
                                     term.setCursorPos(1,1)
                                     setTextColourC(colours.yellow)
-                                    print('Downloading..\n')
+                                    write('Connecting... ')
                                     local h = http.get(choice, {['User-Agent'] = 'Shotgun/0.0.7'})
                                     local data = h.readAll()
                                     h.close()
+                                    setTextColourC(colours.lime)
+                                    write('Success.\n')
                                     local open = fs.open('./shotgun_mods/' .. files[selected][3], 'w')
                                     open.write(data)
                                     open.close()
                                     setTextColourC(colours.lime)
                                     print('Finished!')
                                     setTextColourC(colours.yellow)
-                                    print('Press any key to continue.')
+                                    print('\nPress any key to continue.')
                                     os.pullEvent('key')
                                 else
                                     term.clear()

@@ -6,7 +6,7 @@
 
 modName = 'Example Mod'
 
-function ai_emptyshell(currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValues)
+local function ai_emptyshell(currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValues)
     math.randomseed(seed); math.random();
     
     local botHasSuccumbed = localValues['succumbed']
@@ -52,7 +52,7 @@ end
         he tries to make you vulnerable before then so he can incinerate you.
         however, he gives you some ammo to start because he plays fair.
 ]]
-function ai_odium(currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValue)
+local function ai_odium(currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValue)
     if (localValue == 'curse' or playerAmmo <= 0 or currentAmmo <= 5) and isPredicting then -- about to play vaporising light or magical light prevents seeing
         return 91
     end
@@ -101,7 +101,7 @@ function ai_odium(currentAmmo, playerAmmo, playersLastMove, botsLastMove, player
     end
 end
 
-function ai_mindcontrol(currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValues)
+local function ai_mindcontrol(currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValues)
     math.randomseed(seed); math.random();
     local choices = {1, 2, 5, 6, 7}
     local newMove = choices[math.random(1, #choices)];
@@ -121,7 +121,7 @@ function ai_mindcontrol(currentAmmo, playerAmmo, playersLastMove, botsLastMove, 
     end
 end
 
-function ai_concealed(currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValues)
+local function ai_concealed(currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValues)
     math.randomseed(seed); math.random();
     local choices = {1, 2, 3}
     if currentAmmo <= 0 or botIsCursed then
