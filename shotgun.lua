@@ -231,7 +231,20 @@ for k, v in pairs(listOfMods) do
 end
 
 if #ainums == 0 then
-    print('No mods have been installed.')
+    setTextColourC(colours.yellow)
+    write('No mods have been installed. Would you like to install the default mod? (y/n) ')
+    setTextColourC(colours.white)
+    if read():sub(1,1):lower() == 'y' then
+        local dataHandle = http.get('https://raw.githubusercontent.com/atenfyr/shotgun/master/shotgun_mods/default.lua', {['User-Agent'] = 'Shotgun/0.0.7'}) -- bad joke?
+        local open = fs.open('./shotgun_mods/default.lua', 'w')
+        open.write(dataHandle.readAll())
+        open.close()
+        dataHandle.close()
+        setTextColourC(colours.lime)
+        print('Downloaded successfully.')
+        setTextColourC(colours.white)
+    end
+    error()
 end
 
 term.clear()
