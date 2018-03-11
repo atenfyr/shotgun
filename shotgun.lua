@@ -294,6 +294,7 @@ local hasSelected = false
 local sectionH = screenHeight-2
 
 if args[1] and args[1]:find('mod') then -- mod loader GUI
+    modList[#modList+1] = 'Install new mods'
     modList[#modList+1] = 'Exit'
     while true do
         selected = 1
@@ -338,7 +339,57 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                 selected = 1
                 playSound("minecraft:ui.button.click")
             elseif ek == keys.enter then
-                if selected == #modList then
+                if selected == #modList-1 then -- install new mods
+                    local h = http.get('putUrlHere', {['User-Agent'] = 'Shotgun/0.0.7'})
+                    local files = textutils.unserialise(h.readAll())
+                    h.close()
+
+                    selected = 1
+                    hasSelected = false
+                    repeat
+                        term.clear()
+                        term.setCursorPos(1,1)
+                        setTextColourC(colours.green)
+                        print('Mods:')
+                        local i = 0
+                        for name, url in pairs(files) do
+                            i = i + 1
+                            if i == selected then
+                                setTextColourC(colours.yellow)
+                                io.write('> ')
+                                setTextColourC(colours.white)
+                                io.write(name .. '\n')
+                            elseif (i < math.floor((selected/sectionH)+1)*sectionH) and (i >= math.floor(selected/sectionH)*sectionH) then
+                                setTextColourC(colours.white)
+                                print(name)
+                            end
+                        end
+
+                        local newText = 'Page '.. math.floor((selected/sectionH)+1) .. ' of ' .. math.floor((#modList/sectionH)+1)
+                        term.setCursorPos(screenWidth-#newText, 1)
+                        setTextColourC(colours.green)
+                        write(newText)
+                        setTextColourC(colours.white)
+                    
+                        local _, ek = os.pullEvent("key")
+                        if (ek == keys.up or ek == keys.w) and selected ~= 1 then
+                            selected = selected - 1
+                            playSound("minecraft:ui.button.click")
+                        elseif (ek == keys.down or ek == keys.s) and selected ~= #modList then
+                            selected = selected + 1
+                            playSound("minecraft:ui.button.click")
+                        elseif (ek == keys.up or ek == keys.w) and selected == 1 then
+                            selected = #modList
+                            playSound("minecraft:ui.button.click")
+                        elseif (ek == keys.down or ek == keys.s) and selected == #modList then
+                            selected = 1
+                            playSound("minecraft:ui.button.click")
+                        elseif ek == keys.enter then
+                            hasSelected = true
+                            playSound("minecraft:ui.button.click")
+                        end
+                    until hasSelected
+                elseif selected == #modList then -- exit
                     term.clear()
                     term.setCursorPos(1,1)
                     error()
