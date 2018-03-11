@@ -307,6 +307,7 @@ local hasSelected = false
 local sectionH = screenHeight-2
 
 if args[1] and args[1]:find('mod') then -- mod loader GUI
+    modList[#modList+1] = '\n'
     modList[#modList+1] = 'Install new mods'
     modList[#modList+1] = 'Exit'
     while true do
@@ -328,7 +329,11 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                     io.write(modName .. '\n')
                 elseif (i < math.floor((selected/sectionH)+1)*sectionH) and (i >= math.floor(selected/sectionH)*sectionH) then
                     setTextColourC(colours.white)
-                    print(modName)
+                    if modName == '\n' then
+                        print()
+                    else
+                        print(modName)
+                    end
                 end
             end
         
@@ -341,9 +346,15 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
             local _, ek = os.pullEvent("key")
             if (ek == keys.up or ek == keys.w) and selected ~= 1 then
                 selected = selected - 1
+                if modList[selected] == '\n' then
+                    selected = selected - 1
+                end
                 playSound("minecraft:ui.button.click")
             elseif (ek == keys.down or ek == keys.s) and selected ~= #modList then
                 selected = selected + 1
+                if modList[selected] == '\n' then
+                    selected = selected + 1
+                end
                 playSound("minecraft:ui.button.click")
             elseif (ek == keys.up or ek == keys.w) and selected == 1 then
                 selected = #modList
@@ -354,10 +365,12 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
             elseif ek == keys.enter then
                 hasSelected = true
                 if selected == #modList-1 then -- install new mods
+                    playSound("minecraft:ui.button.click")
                     local h = http.get('https://raw.githubusercontent.com/atenfyr/shotgun_mods/master/shotgun_repository', headers)
                     local files = textutils.unserialise(h.readAll())
                     h.close()
 
+                    files[#files+1] = {'\n', '\n'}
                     files[#files+1] = {'Back', 'Back'}
                     selected = 1
                     hasSelected = false
@@ -374,7 +387,11 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                                 io.write(files[i][1] .. '\n')
                             elseif (i < math.floor((selected/sectionH)+1)*sectionH) and (i >= math.floor(selected/sectionH)*sectionH) then
                                 setTextColourC(colours.white)
-                                print(files[i][1])
+                                if files[i][1] == '\n' then
+                                    print()
+                                else
+                                    print(files[i][1])
+                                end
                             end
                         end
 
@@ -387,9 +404,15 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                         local _, ek = os.pullEvent("key")
                         if (ek == keys.up or ek == keys.w) and selected ~= 1 then
                             selected = selected - 1
+                            if files[selected][1] == '\n' then
+                                selected = selected - 1
+                            end
                             playSound("minecraft:ui.button.click")
                         elseif (ek == keys.down or ek == keys.s) and selected ~= #files then
                             selected = selected + 1
+                            if files[selected][1] == '\n' then
+                                selected = selected + 1
+                            end
                             playSound("minecraft:ui.button.click")
                         elseif (ek == keys.up or ek == keys.w) and selected == 1 then
                             selected = #files
@@ -398,6 +421,7 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                             selected = 1
                             playSound("minecraft:ui.button.click")
                         elseif ek == keys.enter then
+                            playSound("minecraft:ui.button.click")
                             hasSelected = true
                             choice = files[selected][2]
                             if choice ~= 'Back' then
@@ -437,6 +461,7 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                             playSound("minecraft:ui.button.click")
                         end
                     until hasSelected
+                    selected = 1
                     hasSelected = false
                 elseif selected == #modList then -- exit
                     term.clear()
