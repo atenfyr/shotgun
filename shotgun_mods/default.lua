@@ -27,13 +27,13 @@ local function ai_simple(currentAmmo, playerAmmo, playersLastMove, botsLastMove,
     if playerHasSuccumbed or botIsCursed then
         return 2
     elseif currentAmmo >= 1 then
-		if playerAmmo < 1 then
+		if playerAmmo <= 0 or playerIsCursed then
 			return 3
 		else
 			return 1
 		end
 	else
-		if playerAmmo >= 1 then
+		if playerAmmo >= 1 and not playerIsCursed then
 			return 2
 		else
 			return 1
@@ -44,9 +44,9 @@ end
 
 local function ai_random(currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed)
 	math.randomseed(seed); math.random()
-	local choices = {1,2,3}
-	if currentAmmo < 1 then
-		choices = {1,2}
+	local choices = {1, 2, 3}
+	if currentAmmo < 1 or botIsCursed then
+		choices = {1, 2}
 	end
 	
 	local mv = choices[math.random(1,#choices)]

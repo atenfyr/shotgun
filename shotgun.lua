@@ -1,14 +1,14 @@
 -- a quick guide to modding shotgun
 --[[
     installing mods:
-        a mod can be installed by placing it in the shotgun_mods directory automatically generated upon first boot.
+        a mod can be installed by placing it in the shotgun_mods directory that is automatically generated upon first boot.
     
     generic modding:
         mods consist of several bots which override the default list of bots. all bots consist of a single function which is run every turn.
         a mod can have more than one bot, but it must specify the function names for each of the bots in two tables.
         aiList is a list of numbers with the name that each bot should be assigned, and aiFunctions links the bot names to their functions.
         here is an example:
-            aiList = {[1] = "Test Bot"}
+            aiList = {"Test Bot"}
             aiFunctions = {["Test Bot"] = testBotFunction}
         in this case, testBotFunction is a bot function, and it will be listed as Test Bot when selecting a bot to fight.
 
@@ -41,8 +41,11 @@
 
         after returning a move number (and the number is not 92 or 93), you can pass two more arguments. the second argument is a table of values to replace, and the third is a table to save as localValues.
         the second argument has five parameters, in this order: {currentAmmo, playerAmmo, playerIsCursed, botIsCursed, playersCurrentMove}
-        if the table is less than five parameters, then the values that are dropped from the end are unmodified.
+        if the table is less than five parameters, then the values that are dropped from the end are unmodified. if a value is specified as nil, it will also remain unmodified.
         the third argument can be anything, a table, a string, a number, etc. and it will be passed to the bot function every single move as the last argument: localValues.
+        if a fourth argument is passed as a string, then the move will be displayed as whatever the fourth argument is. however, prophets can see through this disguise with their Foresee ability. (if disguised, block and curse sounds are disabled; it's up to you to add those in with playSound.)
+        if the fifth argument is set the true, prophets cannot see through a disguised move. (use this for custom abilities)
+        if a sixth argument is passed, it will specify the colour that the text will appear as to a prophet. (for example, colours.orange would be valid.)
 ]]
 
 if not fs.exists('shotgun_mods') then
@@ -148,8 +151,8 @@ local plays = {
     [7] = "Retaliate", 
     [8] = "Succumb",
     [91] = "Signal: No Previous Move",
-    [92] = "Signal: Bot Lost",
-    [93] = "Signal: Bot Won",
+    [92] = "Automatic Lose",
+    [93] = "Automatic Win",
     [99] = "Signal: Bot is Unpredictable"
 }
 
@@ -197,6 +200,7 @@ local programEnvironment = {
 }
 
 function concatTablesNumerically(table1, table2)
+    table.insert(table2, 1, '\n')
     for i = 1, #table2 do
         table1[#table1+1] = table2[i]
     end
@@ -220,7 +224,7 @@ for k, v in pairs(listOfMods) do
 
     local fn, err = loadstring(data)
     if err then
-        printError('Error in bot file!\n' .. err)
+        printError('Error in mod "' .. v:gsub('.lua', '') .. '"!\n' .. err)
         error()
     end
     setfenv(fn, programEnvironment)
@@ -228,6 +232,10 @@ for k, v in pairs(listOfMods) do
     
     concatTablesNumerically(ainums, programEnvironment['aiList'])
     concatTablesByOverriding(ainames, programEnvironment['aiFunctions'])
+end
+
+if ainums[1] == '\n' then
+    table.remove(ainums, 1)
 end
 
 if #ainums == 0 then
@@ -258,22 +266,26 @@ repeat
     term.clear()
     term.setCursorPos(1,1)
     setTextColourC(colours.green)
-    print("Choose an AI to fight: ")
+    print('Choose an AI to fight: ')
     local i = 0
     for name, _ in pairs(ainums) do
         i = i + 1
         if i == selected then
             setTextColourC(colours.yellow)
-            io.write("> ")
+            io.write('> ')
             setTextColourC(colours.white)
-            io.write(ainums[i] .. "\n")
+            io.write(ainums[i] .. '\n')
         elseif (i < math.floor((selected/sectionH)+1)*sectionH) and (i >= math.floor(selected/sectionH)*sectionH) then
-            setTextColourC(colours.white)
-            print(ainums[i])
+            if ainums[i] == '\n' then
+                print()
+            else
+                setTextColourC(colours.white)
+                print(ainums[i])
+            end
         end
     end
 
-    local newText = "Page " .. math.floor((selected/sectionH)+1) .. " of " .. math.floor((#ainums/sectionH)+1)
+    local newText = 'Page '.. math.floor((selected/sectionH)+1) .. ' of ' .. math.floor((#ainums/sectionH)+1)
     term.setCursorPos(screenWidth-#newText, 1)
     setTextColourC(colours.green)
     write(newText)
@@ -282,9 +294,15 @@ repeat
     local _, ek = os.pullEvent("key")
     if (ek == keys.up or ek == keys.w) and selected ~= 1 then
         selected = selected - 1
+        if ainums[selected] == '\n' then
+            selected = selected - 1
+        end
         playSound("minecraft:ui.button.click")
     elseif (ek == keys.down or ek == keys.s) and selected ~= #ainums then
         selected = selected + 1
+        if ainums[selected] == '\n' then
+            selected = selected + 1
+        end
         playSound("minecraft:ui.button.click")
     elseif (ek == keys.up or ek == keys.w) and selected == 1 then
         selected = #ainums
@@ -484,7 +502,7 @@ local function render(currentAmmo, playerAmmo, playersLastMove, botsLastMove, is
     setTextColourC(colours.white)
     if isPredicting then
         playSound("minecraft:entity.zombie_villager.converted")
-        local result, _ = ainames[ainame](currentAmmo, playerAmmo, playersLastMove, botsLastMove, isCursed, botIsCursed, playerHasSuccumbed, true, playersCurrentMove, seed, localValues)
+        local result, _, _, disguise, cantSeeThrough, customColour = ainames[ainame](currentAmmo, playerAmmo, playersLastMove, botsLastMove, isCursed, botIsCursed, playerHasSuccumbed, true, playersCurrentMove, seed, localValues)
         if plays[result] then
             if (result == 3) or (result == 4) or (result == 7) then
                 setTextColourC(colours.red)
@@ -493,7 +511,12 @@ local function render(currentAmmo, playerAmmo, playersLastMove, botsLastMove, is
             elseif (result == 2) or (result == 5) then
                 setTextColourC(colours.orange)
             end
-            print(ainame .. " is about to play " .. plays[result] .. ".")
+            if disguise and not cantSeeThrough then
+                print("You saw through " .. ainame .. "'s disguise! They are about to play " .. plays[result] .. ".")
+            else
+                setTextColourC(customColour or colours.orange)
+                print(ainame .. " is about to play " .. (disguise or plays[result]) .. ".")
+            end
             setTextColourC(colours.white)
         else
             setTextColourC(colours.red)
@@ -544,9 +567,9 @@ while true do
         move = 6
     end
     
-    local playedASound = false
+    local disguise
 
-    local om, modifyValues, localValuesResp = ainames[ainame](currentAmmo, ammo, tmove, mlm, cursed, aicursed, hasSuccumbed, false, move, sed, localValues)
+    local om, modifyValues, localValuesResp, disguise = ainames[ainame](currentAmmo, ammo, tmove, mlm, cursed, aicursed, hasSuccumbed, false, move, sed, localValues)
     if om == 92 then
         replay(true, turns, ammo, (modifyValues:gsub('%%botname%%', ainame) or "???"), godMode, specialability, hasSuccumbed)
     elseif om == 93 then
@@ -555,16 +578,18 @@ while true do
     
     if modifyValues then
         for k, v in pairs(modifyValues) do
-            if k == 1 then
-                currentAmmo = v
-            elseif k == 2 then
-                ammo = v
-            elseif k == 3 then
-                cursed = v
-            elseif k == 4 then
-                aicursed = v
-            elseif k == 5 then
-                move = v
+            if v then
+                if k == 1 then
+                    currentAmmo = v
+                elseif k == 2 then
+                    ammo = v
+                elseif k == 3 then
+                    cursed = v
+                elseif k == 4 then
+                    aicursed = v
+                elseif k == 5 then
+                    move = v
+                end
             end
         end
     end
@@ -602,21 +627,22 @@ while true do
     tmove2 = move
     
     if om == 3 and currentAmmo <= 0 then
-        last_sentence = last_sentence .. ainame .. " played " .. plays[om] .. ", but they had no ammo."
+        last_sentence = last_sentence .. ainame .. " played " .. (disguise or plays[om]) .. ", but they had no ammo."
         om = 6
     elseif (om == 3 or om == 5) and (aicursed == true) then
-        last_sentence = last_sentence .. ainame .. " played " .. plays[om] .. ", but they were cursed."
+        last_sentence = last_sentence .. ainame .. " played " .. (disguise or plays[om]) .. ", but they were cursed."
         playSound("minecraft:entity.witch.ambient")
         playedASound = true
         om = 6
     elseif (om == 5 and currentAmmo < 4) or (om == 4 and currentAmmo <= 0) or (om == 7 and currentAmmo < 2) then
-        last_sentence = last_sentence .. ainame .. " played " .. plays[om] .. ", but they didn't have enough ammo."
+        last_sentence = last_sentence .. ainame .. " played " .. (disguise or plays[om]) .. ", but they didn't have enough ammo."
         om = 6
     else
-        last_sentence = last_sentence .. ainame .. " played " .. plays[om] .. "."
+        last_sentence = last_sentence .. ainame .. " played " .. (disguise or plays[om]) .. "."
     end
     mlm2 = om
     print(last_sentence)
+
     if hasSuccumbed then
         ammo = ammo - 2
         if ammo <= 0 then
@@ -638,9 +664,8 @@ while true do
         ammo = ammo - 1
         if om == 1 or om == 4 or om == 5 or om == 6 then
             replay(true, turns, ammo, last_sentence, godMode, specialability, hasSuccumbed)
-        elseif om == 2 then
+        elseif om == 2 and not disguise then
             playSound("minecraft:entity.zombie.attack_iron_door")
-            playedASound = true
         end
     elseif move == 1 then
         if om == 3 then
@@ -666,9 +691,8 @@ while true do
         currentAmmo = currentAmmo - 1
         if move == 1 or move == 4 or move == 5 or move == 6 then
             replay(false, turns, ammo, last_sentence, godMode, specialability, hasSuccumbed)
-        elseif move == 2 then
+        elseif move == 2 and not disguise then
             playSound("minecraft:entity.zombie.attack_iron_door")
-            playedASound = true
         end
     elseif om == 1 then
         if move == 3 then
@@ -689,19 +713,19 @@ while true do
             replay(false, turns, ammo, last_sentence, godMode, specialability, hasSuccumbed)
         end
     end
-    if om == 4 then 
-        playSound("minecraft:entity.witch.ambient")
-        playedASound = true
+    if om == 4 then
+        if not disguise then
+            playSound("minecraft:entity.witch.ambient")
+        end
         cursed = true
     end
-    if move == 4 then 
-        playSound("minecraft:entity.witch.ambient")
-        playedASound = true
+    if move == 4 and not disguise then
+        if not disguise then
+            playSound("minecraft:entity.witch.ambient")
+        end
         aicursed = true 
     end
     print()
-    if not playedASound then
-        playSound("minecraft:ui.button.click")
-    end
+    playSound("minecraft:ui.button.click")
     sleep(1)
 end
