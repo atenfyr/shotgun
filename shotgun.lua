@@ -345,13 +345,6 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                     local files = textutils.unserialise(h.readAll())
                     h.close()
 
-                    files = textutils.unserialise([[
-                        {
-                            [1] = {'Default Bots', 'https://raw.githubusercontent.com/atenfyr/shotgun/master/shotgun_mods/default.lua'},
-                            [2] = {'Example Mod', 'https://raw.githubusercontent.com/atenfyr/shotgun/master/shotgun_mods/examplemod.lua'}
-                        }
-                    ]])
-
                     files[#files+1] = {'Back', 'Back'}
                     selected = 1
                     hasSelected = false
