@@ -63,9 +63,11 @@
 ]]
 
 local config = {}
+
 if not fs.exists('./shotgun_mods') then
     fs.makeDir('./shotgun_mods')
 end
+
 if not fs.exists('./shotgun_mods/config') then
     local h = fs.open('./shotgun_mods/config', 'w')
     h.write('{}')
@@ -176,8 +178,8 @@ local plays = {
     [7] = "Retaliate", 
     [8] = "Succumb",
     [91] = "Signal: No Previous Move",
-    [92] = "Automatic Lose",
-    [93] = "Automatic Win",
+    [92] = "Signal: Bot Lost",
+    [93] = "Signal: Bot Won",
     [99] = "Signal: Bot is Unpredictable"
 }
 
@@ -264,6 +266,7 @@ for k, v in pairs(listOfFiles) do
             concatTablesNumerically(ainums, programEnvironment['aiList'])
             concatTablesByOverriding(ainames, programEnvironment['aiFunctions'])
         end
+
         modList[#modList+1] = programEnvironment['modName']
         modListFiles[programEnvironment['modName']] = v
         modCount = modCount + 1
@@ -293,6 +296,7 @@ if modCount == 0 then
     modListFiles[programEnvironment['modName']] = v
     modCount = modCount + 1
 end
+
 ainums[#ainums+1] = '\n'
 ainums[#ainums+1] = 'Exit'
 if ainums[1] == '\n' then
@@ -571,8 +575,6 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                             if selected == 1 then
                                 fs.delete('./shotgun_mods/' .. chosen)
                                 for nameOfMod, modPath in pairs(modListFiles) do
-                                    --modList[#modList+1] = files[selected][1]
-                                    --modListFiles[files[selected][1]] = files[selected][3]
                                     if modPath == chosen then
                                         modListFiles[nameOfMod] = nil
                                         for number, nameOfMod2 in pairs(modList) do
@@ -685,59 +687,23 @@ if not debug_mode then
 	end
 	local i = 0
 	local selected = 1
-	local hasSelected = false
+    local hasSelected = false
+    local options = {'Citizen', 'Veteran', 'Witch', 'Prophet', 'Empty Shell'}
 	repeat
 		term.clear()
 		term.setCursorPos(1,1)
 		setTextColourC(colours.green)
 		print("Select your class:")
-		setTextColourC(colours.white)
-		if selected == 1 then
-			setTextColourC(colours.yellow)
-			io.write(">")
-			setTextColourC(colours.white)
-			print(" Citizen")
-			print("Veteran")
-			print("Witch")
-			print("Prophet")
-			print("Empty Shell")
-		elseif selected == 2 then
-			print("Citizen")
-			setTextColourC(colours.yellow)
-			io.write(">")
-			setTextColourC(colours.white)
-			print(" Veteran")
-			print("Witch")
-			print("Prophet")
-			print("Empty Shell")
-		elseif selected == 3 then
-			print("Citizen")
-			print("Veteran")
-			setTextColourC(colours.yellow)
-			io.write(">")
-			setTextColourC(colours.white)
-			print(" Witch")
-			print("Prophet")
-			print("Empty Shell")
-		elseif selected == 4 then
-			print("Citizen")
-			print("Veteran")
-			print("Witch")
-			setTextColourC(colours.yellow)
-			io.write(">")
-			setTextColourC(colours.white)
-			print(" Prophet")
-			print("Empty Shell")
-		elseif selected == 5 then
-			print("Citizen")
-			print("Veteran")
-			print("Witch")
-			print("Prophet")
-			setTextColourC(colours.yellow)
-			io.write(">")
-			setTextColourC(colours.white)
-			print(" Empty Shell")
-		end
+        setTextColourC(colours.white)
+        for i = 1, #options do
+            if i == selected then
+                setTextColourC(colours.yellow)
+                io.write('> ')
+                setTextColourC(colours.white)
+            end
+            print(options[i])
+        end
+
 		local _, ek = os.pullEvent("key")
 		if (ek == keys.up or ek == keys.w) and selected ~= 1 then
 			selected = selected - 1
@@ -771,7 +737,8 @@ if not debug_mode then
 	elseif knowledge == 5 then
 		specialability = 8
 		role = "Empty Shell"
-	end
+    end
+    
 	term.clear()
 	term.setCursorPos(1,1)
 	if not _G["shotgun_hasLearned"][role] then
@@ -858,7 +825,7 @@ local function render(currentAmmo, playerAmmo, playersLastMove, botsLastMove, is
         local result, _, _, disguise, cantSeeThrough, customColour = ainames[ainame](currentAmmo, playerAmmo, playersLastMove, botsLastMove, isCursed, botIsCursed, playerHasSuccumbed, true, playersCurrentMove, seed, localValues)
         if result >= 90 and result <= 99 then -- all signals
             setTextColourC(colours.red)
-            print("You can't seem to figure it out..")
+            print("You can't quite seem to figure it out..")
             setTextColourC(colours.white)
         else
             if (result == 3) or (result == 4) or (result == 7) then
