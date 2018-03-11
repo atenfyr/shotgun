@@ -10,13 +10,13 @@
         all bots consist of a single function which is run every turn. a mod is simply a collection of bots tied together by two tables.
         aiList is a list of numbers with the name that each bot should be assigned, and aiFunctions links the bot names to their functions.
         in addition, there must be a global variable named modName which specifies the name of the mod as shown in the mod loader.
-        there is an optional global function you may specify called init(); it will run upon boot of any of the bots.
+        there is an optional global function you may specify called init(); it will run upon boot of any of the bots. it is given one parameter; the bot which is being battled.
         here is an example of a basic mod:
             function testBotFunction()
                 return 1 -- always reload
             end
 
-            function init()
+            function init(currentAI)
                 -- put stuff here
             end
 
@@ -188,10 +188,16 @@ local plays = {
 }
 
 local customPlays = {}
+local specialability = 6
+local knowledge = 1
 
 local function addNewMove(id, name, prophetColour, behavesLike)
     plays[id] = name
     customPlays[id] = {name, prophetColour, behavesLike}
+end
+
+local function setSpecialAbility(id)
+    specialability = id
 end
 
 local ainums = {}
@@ -238,7 +244,8 @@ local programEnvironment = {
     write = write,
     print = print,
     playSound = playSound,
-    addNewMove = addNewMove
+    addNewMove = addNewMove,
+    setSpecialAbility = setSpecialAbility
 }
 
 function concatTablesNumerically(table1, table2, addNL)
@@ -772,8 +779,6 @@ if not ainames[ainame] then
     error()
 end
 
-local specialability = 6
-local knowledge = 1
 local role = "Citizen"
 if not _G["shotgun_hasLearned"] then
     _G["shotgun_hasLearned"] = {}
@@ -893,9 +898,7 @@ local godMode = false
 local ammo = 0
 local currentAmmo = 0
 local tmove = 91
-local tmove2 = 91
 local mlm = 91
-local mlm2 = 91
 local turns = 0
 local localValues = {}
 
@@ -943,15 +946,11 @@ local function render(currentAmmo, playerAmmo, playersLastMove, botsLastMove, is
     end
 end
 
-programEnvironment['init']()
+programEnvironment['init'](ainame)
 
 while true do
     local sed = math.random(1,9999999)
     turns = turns + 1f
-    tmove = tmove2
-    tmove2 = 0
-    mlm = mlm2
-    mlm2 = 0
     if permAmmo then
         ammo = 99
     end
@@ -1045,9 +1044,7 @@ while true do
             specialability = 6
         end
     end
-    
-    tmove2 = move
-    
+        
     lastSentence = lastSentence .. ainame .. " played " .. (disguise or plays[om])
     if om == 3 and currentAmmo <= 0 then
         lastSentence = lastSentence .. ", but they had no ammo."
@@ -1063,15 +1060,18 @@ while true do
     else
         lastSentence = lastSentence .. "."
     end
-    mlm2 = om
 
     if newLastSentence then
         lastSentence = newLastSentence
     end
     print(lastSentence)
 
+    tmove = move
+    mlm = om
+
     if customPlays[move] then
         move = customPlays[move][3]
+        disguise = true -- mute sounds
     end
     if customPlays[om] then
         om = customPlays[om][3]
