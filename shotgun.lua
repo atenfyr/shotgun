@@ -402,9 +402,14 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                                     h.close()
                                     setTextColourC(colours.lime)
                                     write('Success.\n')
+
                                     local open = fs.open('./shotgun_mods/' .. files[selected][3], 'w')
                                     open.write(data)
                                     open.close()
+
+                                    table.insert(modList, 1, files[selected][1])
+                                    modListFiles[files[selected][1]] = files[selected][3]
+
                                     setTextColourC(colours.lime)
                                     print('Finished!')
                                     setTextColourC(colours.yellow)
@@ -531,6 +536,21 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                             playSound("minecraft:ui.button.click")
                             if selected == 1 then
                                 fs.delete('./shotgun_mods/' .. chosen)
+                                for nameOfMod, modPath in pairs(modListFiles) do
+                                    --modList[#modList+1] = files[selected][1]
+                                    --modListFiles[files[selected][1]] = files[selected][3]
+                                    if modPath == chosen then
+                                        modListFiles[nameOfMod] = nil
+                                        for number, nameOfMod2 in pairs(modList) do
+                                            if nameOfMod2 == nameOfMod then
+                                                table.remove(modList, number)
+                                                break
+                                            end
+                                        end
+                                        break
+                                    end
+                                end
+
                                 term.clear()
                                 term.setCursorPos(1,1)
                                 setTextColourC(colours.green)
@@ -541,10 +561,6 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                                 io.write('Okay')
                                 os.pullEvent("key")
                                 playSound("minecraft:ui.button.click")
-
-                                term.clear()
-                                term.setCursorPos(1,1)
-                                error()
                             end
                             hasSelected = true
                         end
