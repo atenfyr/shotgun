@@ -78,6 +78,7 @@ h.close()
 
 local args = {...}
 local screenWidth, screenHeight = term.getSize()
+local headers = {['User-Agent'] = 'Shotgun/0.0.7'}
 
 local function setTextColourC(...)
 	if term.isColour() then
@@ -274,20 +275,11 @@ ainums[#ainums+1] = '\n'
 ainums[#ainums+1] = 'Exit'
 
 if #ainums == 0 then
-    setTextColourC(colours.yellow)
-    write('No mods have been installed. Would you like to install the default mod? (y/n) ')
-    setTextColourC(colours.white)
-    if read():sub(1,1):lower() == 'y' then
-        local dataHandle = http.get('https://raw.githubusercontent.com/atenfyr/shotgun/master/shotgun_mods/default.lua', {['User-Agent'] = 'Shotgun/0.0.7'}) -- bad joke?
-        local open = fs.open('./shotgun_mods/default.lua', 'w')
-        open.write(dataHandle.readAll())
-        open.close()
-        dataHandle.close()
-        setTextColourC(colours.lime)
-        print('Downloaded successfully.')
-        setTextColourC(colours.white)
-    end
-    error()
+    local dataHandle = http.get('https://raw.githubusercontent.com/atenfyr/shotgun_mods/master/mods/default.lua', headers)
+    local open = fs.open('./shotgun_mods/default.lua', 'w')
+    open.write(dataHandle.readAll())
+    open.close()
+    dataHandle.close()
 end
 
 term.clear()
@@ -345,7 +337,7 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
             elseif ek == keys.enter then
                 hasSelected = true
                 if selected == #modList-1 then -- install new mods
-                    local h = http.get('https://raw.githubusercontent.com/atenfyr/shotgun/master/shotgun_repository', {['User-Agent'] = 'Shotgun/0.0.7'})
+                    local h = http.get('https://raw.githubusercontent.com/atenfyr/shotgun_mods/master/shotgun_repository', headers)
                     local files = textutils.unserialise(h.readAll())
                     h.close()
 
@@ -397,7 +389,7 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                                     term.setCursorPos(1,1)
                                     setTextColourC(colours.yellow)
                                     write('Connecting... ')
-                                    local h = http.get(choice, {['User-Agent'] = 'Shotgun/0.0.7'})
+                                    local h = http.get(choice, headers)
                                     local data = h.readAll()
                                     h.close()
                                     setTextColourC(colours.lime)
