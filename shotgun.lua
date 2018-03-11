@@ -245,7 +245,7 @@ local modListFiles = {}
 local modCount = 0
 
 for k, v in pairs(listOfFiles) do
-    if v ~= 'config' then
+    if v:find('.lua') and not fs.isDir(v) then
         modFile = './shotgun_mods/' .. v
         local open = fs.open(modFile, 'r')
         local data = open.readAll()
