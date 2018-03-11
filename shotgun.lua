@@ -10,15 +10,20 @@
         all bots consist of a single function which is run every turn. a mod is simply a collection of bots tied together by two tables.
         aiList is a list of numbers with the name that each bot should be assigned, and aiFunctions links the bot names to their functions.
         in addition, there must be a global variable named modName which specifies the name of the mod as shown in the mod loader.
+        there is an optional global function you may specify called init(); it will run upon boot of any of the bots.
         here is an example of a basic mod:
-            local function testBotFunction()
+            function testBotFunction()
                 return 1 -- always reload
+            end
+
+            function init()
+                -- put stuff here
             end
 
             modName = 'Testing Mod'
             aiList = {"Test Bot"}
-            aiFunctions = {["Test Bot"] = testBotFunction}
-        in this case, testBotFunction is a bot function which will always reload, and it will be listed as Test Bot when selecting a bot to fight.
+            aiInitFunctions = {["Test Bot"] = testBotInit}
+        in this case, testBotFunction is a bot function which will always reload, and the bot will be listed as Test Bot when selecting a bot to fight.
 
     adding custom bots:
         bot functions are passed the following arguments:
@@ -48,13 +53,14 @@
         99 should only be passed as a move number if isPredicting is true; it is used to tell a Prophet that the bot cannot be predicted.
 
         after returning a move number (and the number is not 92 or 93), you can pass some more arguments. the second argument is a table of values to replace.
-        the second argument has five entries in a table, in this order: {currentAmmo, playerAmmo, playerIsCursed, botIsCursed, playersCurrentMove, nextMoveSentence}
+        the second argument has five entries in a table, in this order: {currentAmmo, playerAmmo, playerIsCursed, botIsCursed, playersCurrentMove, moveSentence}
         if the table is less than six parameters, then the values that are dropped from the end are unmodified. if a value is specified as nil, it will also remain unmodified.
         the third argument can be anything, a table, a string, a number, etc. and it will be passed to the bot function every single move as the last argument: localValues.
         if a fourth argument is passed as a string, then the move will be displayed as whatever the fourth argument is. however, prophets can see through this disguise with their Foresee ability. (if disguised, block and curse sounds are disabled; it's up to you to add those in with playSound.)
-        if the fifth argument is set the true, prophets cannot see through a disguised move. (use this for custom abilities)
-        if a sixth argument is passed, it will specify the colour that the text will appear as to a prophet. (for example, colours.orange would be valid.)
 
+        if you wish to add new abilities, the addNewMove function can be used. the syntax is as such:
+            addNewMove(moveID, moveName, prophetColour, behavesLike)
+        
         see default.lua or examplemod.lua for some examples.
 ]]
 
@@ -181,6 +187,13 @@ local plays = {
     [99] = "Signal: Bot is Unpredictable"
 }
 
+local customPlays = {}
+
+local function addNewMove(id, name, prophetColour, behavesLike)
+    plays[id] = name
+    customPlays[id] = {name, prophetColour, behavesLike}
+end
+
 local ainums = {}
 local ainames = {}
 local ainame = "Dummy"
@@ -221,7 +234,8 @@ local programEnvironment = {
     plays = plays,
     xpcall = xpcall,
     parallel = parallel,
-    playSound = playSound
+    playSound = playSound,
+    addNewMove = addNewMove
 }
 
 function concatTablesNumerically(table1, table2, addNL)
@@ -901,7 +915,7 @@ local function render(currentAmmo, playerAmmo, playersLastMove, botsLastMove, is
     --isPredicting = true
     if isPredicting then
         playSound("minecraft:entity.zombie_villager.converted")
-        local result, _, _, disguise, cantSeeThrough, customColour = ainames[ainame](currentAmmo, playerAmmo, playersLastMove, botsLastMove, isCursed, botIsCursed, playerHasSuccumbed, true, playersCurrentMove, seed, localValues)
+        local result, _, _, disguise = ainames[ainame](currentAmmo, playerAmmo, playersLastMove, botsLastMove, isCursed, botIsCursed, playerHasSuccumbed, true, playersCurrentMove, seed, localValues)
         if result >= 90 and result <= 99 then -- all signals
             setTextColourC(colours.red)
             print("You can't quite seem to figure it out..")
@@ -913,17 +927,20 @@ local function render(currentAmmo, playerAmmo, playersLastMove, botsLastMove, is
                 setTextColourC(colours.lime)
             elseif (result == 2) or (result == 5) then
                 setTextColourC(colours.orange)
+            elseif customPlays[result] then
+                setTextColourC(customPlays[result][2])
             end
-            if disguise and not cantSeeThrough then
+            if disguise then
                 print("You saw through " .. ainame .. "'s disguise! They are about to play " .. plays[result] .. ".")
             else
-                setTextColourC(customColour or colours.orange)
-                print(ainame .. " is about to play " .. (disguise or plays[result]) .. ".")
+                print(ainame .. " is about to play " .. plays[result] .. ".")
             end
             setTextColourC(colours.white)
         end
     end
 end
+
+programEnvironment['init']()
 
 while true do
     local sed = math.random(1,9999999)
@@ -1049,6 +1066,13 @@ while true do
         lastSentence = newLastSentence
     end
     print(lastSentence)
+
+    if customPlays[move] then
+        move = customPlays[move][3]
+    end
+    if customPlays[om] then
+        om = customPlays[om][3]
+    end
 
     if hasSuccumbed then
         ammo = ammo - 2
