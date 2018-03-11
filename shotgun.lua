@@ -681,94 +681,95 @@ end
 local specialability = 6
 local knowledge = 1
 local role = "Citizen"
-if not debug_mode then
-	if not _G["shotgun_hasLearned"] then
-		_G["shotgun_hasLearned"] = {}
-	end
-	local i = 0
-	local selected = 1
-    local hasSelected = false
-    local options = {'Citizen', 'Veteran', 'Witch', 'Prophet', 'Empty Shell'}
-	repeat
-		term.clear()
-		term.setCursorPos(1,1)
-		setTextColourC(colours.green)
-		print("Select your class:")
-        setTextColourC(colours.white)
-        for i = 1, #options do
-            if i == selected then
-                setTextColourC(colours.yellow)
-                io.write('> ')
-                setTextColourC(colours.white)
-            end
-            print(options[i])
-        end
-
-		local _, ek = os.pullEvent("key")
-		if (ek == keys.up or ek == keys.w) and selected ~= 1 then
-			selected = selected - 1
-			playSound("minecraft:ui.button.click")
-		elseif (ek == keys.down or ek == keys.s) and selected ~= 5 then
-			selected = selected + 1
-			playSound("minecraft:ui.button.click")
-		elseif (ek == keys.up or ek == keys.w) and selected == 1 then
-			selected = 5
-			playSound("minecraft:ui.button.click")
-		elseif (ek == keys.down or ek == keys.s) and selected == 5 then
-			selected = 1
-			playSound("minecraft:ui.button.click")
-		elseif ek == keys.enter then
-			knowledge = selected
-			hasSelected = true
-			playSound("minecraft:ui.button.click")
-		end
-		sleep(0.1)
-    until hasSelected
-    
-	if knowledge == 2 then
-		specialability = 7
-		role = "Veteran"
-	elseif knowledge == 3 then
-		specialability = 4
-		role = "Witch"
-	elseif knowledge == 4 then
-		specialability = 5
-		role = "Prophet"
-	elseif knowledge == 5 then
-		specialability = 8
-		role = "Empty Shell"
-    end
-    
-	term.clear()
-	term.setCursorPos(1,1)
-	if not _G["shotgun_hasLearned"][role] then
-		setTextColourC(colours.green)
-		print("How to play " .. role .. ":\n")
-		setTextColourC(colours.white)
-		print("Press W to Shoot. (Costs 1 ammo, will kill other player)")
-		print("Press A to Reload. (Gives 1 ammo)")
-		print("Press D to Block. (Prevents Shoot from killing you)")
-		if knowledge == 2 then
-			print("Press S to Retaliate. (Costs 2 ammo, bullets will be reflected, killing your opponent)")
-			print("Additionally, you will start the game with 2 ammo.")
-		elseif knowledge == 3 then
-			print("Press S to Curse. (Costs 1 ammo, your opponent can't shoot next turn.)")
-		elseif knowledge == 4 then
-			print("Press S to Foresee. (Costs 4 ammo, allows you to see your opponent's next turn)")
-		elseif knowledge == 5 then
-			print("Press S to Succumb. (You will become unkillable, but you will lose 2 ammo per turn until you run out of ammo and die.)")
-			print("You must kill your opponent after you have Succumbed, otherwise you will lose.")
-		end
-		setTextColourC(colours.orange)
-		print("\nPress any key to continue.")
-		setTextColourC(colours.white)
-		os.pullEvent("key")
-		playSound("minecraft:ui.button.click")
-		_G["shotgun_hasLearned"][role] = true
-	end
-	term.clear()
-	term.setCursorPos(1,1)
+if not _G["shotgun_hasLearned"] then
+    _G["shotgun_hasLearned"] = {}
 end
+
+local i = 0
+local selected = 1
+local hasSelected = false
+local options = {'Citizen', 'Veteran', 'Witch', 'Prophet', 'Empty Shell'}
+
+repeat
+    term.clear()
+    term.setCursorPos(1,1)
+    setTextColourC(colours.green)
+    print("Select your class:")
+    setTextColourC(colours.white)
+    for i = 1, #options do
+        if i == selected then
+            setTextColourC(colours.yellow)
+            io.write('> ')
+            setTextColourC(colours.white)
+        end
+        print(options[i])
+    end
+
+    local _, ek = os.pullEvent("key")
+    if (ek == keys.up or ek == keys.w) and selected ~= 1 then
+        selected = selected - 1
+        playSound("minecraft:ui.button.click")
+    elseif (ek == keys.down or ek == keys.s) and selected ~= 5 then
+        selected = selected + 1
+        playSound("minecraft:ui.button.click")
+    elseif (ek == keys.up or ek == keys.w) and selected == 1 then
+        selected = 5
+        playSound("minecraft:ui.button.click")
+    elseif (ek == keys.down or ek == keys.s) and selected == 5 then
+        selected = 1
+        playSound("minecraft:ui.button.click")
+    elseif ek == keys.enter then
+        knowledge = selected
+        hasSelected = true
+        playSound("minecraft:ui.button.click")
+    end
+    sleep(0.1)
+until hasSelected
+
+if knowledge == 2 then
+    specialability = 7
+    role = "Veteran"
+elseif knowledge == 3 then
+    specialability = 4
+    role = "Witch"
+elseif knowledge == 4 then
+    specialability = 5
+    role = "Prophet"
+elseif knowledge == 5 then
+    specialability = 8
+    role = "Empty Shell"
+end
+
+term.clear()
+term.setCursorPos(1,1)
+if not _G["shotgun_hasLearned"][role] then
+    setTextColourC(colours.green)
+    print("How to play " .. role .. ":\n")
+    setTextColourC(colours.white)
+    print("Press W to Shoot. (Costs 1 ammo, will kill other player)")
+    print("Press A to Reload. (Gives 1 ammo)")
+    print("Press D to Block. (Prevents Shoot from killing you)")
+    if knowledge == 2 then
+        print("Press S to Retaliate. (Costs 2 ammo, bullets will be reflected, killing your opponent)")
+        print("Additionally, you will start the game with 2 ammo.")
+    elseif knowledge == 3 then
+        print("Press S to Curse. (Costs 1 ammo, your opponent can't shoot next turn.)")
+    elseif knowledge == 4 then
+        print("Press S to Foresee. (Costs 4 ammo, allows you to see your opponent's next turn)")
+    elseif knowledge == 5 then
+        print("Press S to Succumb. (You will become unkillable, but you will lose 2 ammo per turn until you run out of ammo and die.)")
+        print("You must kill your opponent after you have Succumbed, otherwise you will lose.")
+    end
+    setTextColourC(colours.orange)
+    print("\nPress any key to continue.")
+    setTextColourC(colours.white)
+    os.pullEvent("key")
+    playSound("minecraft:ui.button.click")
+    _G["shotgun_hasLearned"][role] = true
+end
+
+term.clear()
+term.setCursorPos(1,1)
 
 local function pullEventTab(n, rn)
 	repeat
@@ -860,9 +861,9 @@ while true do
     
     local move = 6
     local timern = 0
-    if isPredicting and (not debug_mode) then
+    if isPredicting then
         timern = os.startTimer(2)
-    elseif not debug_mode then
+    else
         timern = os.startTimer(1)
     end
     isPredicting = false
