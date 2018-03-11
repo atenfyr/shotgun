@@ -266,6 +266,8 @@ end
 if ainums[1] == '\n' then
     table.remove(ainums, 1)
 end
+ainums[#ainums+1] = '\n'
+ainums[#ainums+1] = 'Exit'
 
 if #ainums == 0 then
     setTextColourC(colours.yellow)
@@ -525,6 +527,12 @@ repeat
     end
     sleep(0.1)
 until hasSelected
+
+if ainame == 'Exit' then
+    term.clear()
+    term.setCursorPos(1,1)
+    error()
+end
 
 if not ainames[ainame] then
     term.clear()
