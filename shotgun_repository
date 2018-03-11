@@ -1,4 +1,4 @@
 {
-    ['Default Bots'] = 'https://raw.githubusercontent.com/atenfyr/shotgun/master/shotgun_mods/default.lua'
+    ['Default Bots'] = 'https://raw.githubusercontent.com/atenfyr/shotgun/master/shotgun_mods/default.lua',
     ['Example Mod'] = 'https://raw.githubusercontent.com/atenfyr/shotgun/master/shotgun_mods/examplemod.lua'
 }

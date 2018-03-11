@@ -340,7 +340,7 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                 playSound("minecraft:ui.button.click")
             elseif ek == keys.enter then
                 if selected == #modList-1 then -- install new mods
-                    local h = http.get('putUrlHere', {['User-Agent'] = 'Shotgun/0.0.7'})
+                    local h = http.get('https://raw.githubusercontent.com/atenfyr/shotgun/master/shotgun_repository', {['User-Agent'] = 'Shotgun/0.0.7'})
                     local files = textutils.unserialise(h.readAll())
                     h.close()
 
