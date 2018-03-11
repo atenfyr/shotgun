@@ -140,5 +140,5 @@ function ai_concealed(currentAmmo, playerAmmo, playersLastMove, botsLastMove, pl
     return botsCurrentMove, {}, {}, '???' -- hide what they are actually playing (but prophet can still see through)
 end
 
-aiList = {"Ninja", "Magical Shell", "Odium", "Wizard"}
+aiList = {"Odium", "Ninja", "Magical Shell", "Wizard"}
 aiFunctions = {["Magical Shell"] = ai_emptyshell, ["Wizard"] = ai_mindcontrol, ["Ninja"] = ai_concealed, ["Odium"] = ai_odium}
