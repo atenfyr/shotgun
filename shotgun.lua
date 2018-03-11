@@ -242,6 +242,7 @@ end
 local listOfFiles = fs.list('./shotgun_mods')
 local modList = {}
 local modListFiles = {}
+local modCount = 0
 
 for k, v in pairs(listOfFiles) do
     if v ~= 'config' then
@@ -265,21 +266,37 @@ for k, v in pairs(listOfFiles) do
         end
         modList[#modList+1] = programEnvironment['modName']
         modListFiles[programEnvironment['modName']] = v
+        modCount = modCount + 1
     end
 end
 
-if ainums[1] == '\n' then
-    table.remove(ainums, 1)
-end
-ainums[#ainums+1] = '\n'
-ainums[#ainums+1] = 'Exit'
-
-if #ainums == 0 then
+if modCount == 0 then
+    ainums = {}
     local dataHandle = http.get('https://raw.githubusercontent.com/atenfyr/shotgun_mods/master/mods/default.lua', headers)
     local open = fs.open('./shotgun_mods/default.lua', 'w')
     open.write(dataHandle.readAll())
     open.close()
     dataHandle.close()
+
+    local fn, err = loadfile('./shotgun_mods/default.lua')
+    if err then
+        printError('Error in mod file "' .. v .. '"!\n' .. err)
+        error()
+    end
+    setfenv(fn, programEnvironment)
+    pcall(fn)
+    
+    concatTablesNumerically(ainums, programEnvironment['aiList'])
+    concatTablesByOverriding(ainames, programEnvironment['aiFunctions'])
+
+    modList[#modList+1] = programEnvironment['modName']
+    modListFiles[programEnvironment['modName']] = v
+    modCount = modCount + 1
+end
+ainums[#ainums+1] = '\n'
+ainums[#ainums+1] = 'Exit'
+if ainums[1] == '\n' then
+    table.remove(ainums, 1)
 end
 
 term.clear()
