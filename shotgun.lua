@@ -8,7 +8,8 @@
 --[[
     installing mods:
         a mod can be installed by placing it in the shotgun_mods directory that is automatically generated upon first boot.
-    
+        mods can be enabled or disabled by running "shotgun mods"
+
     generic modding:
         mods consist of several bots which override the default list of bots. all bots consist of a single function which is run every turn.
         a mod can have more than one bot, but it must specify the function names for each of the bots in two tables.
@@ -17,6 +18,7 @@
             aiList = {"Test Bot"}
             aiFunctions = {["Test Bot"] = testBotFunction}
         in this case, testBotFunction is a bot function, and it will be listed as Test Bot when selecting a bot to fight.
+        in addition, mods must define a global variable called "modName" for usage in the mod loader
 
     adding custom bots:
         bot functions are passed the following arguments:
@@ -222,24 +224,31 @@ function concatTablesByOverriding(table1, table2)
     return table1
 end
 
-local listOfMods = fs.list('./shotgun_mods')
+local listOfFiles = fs.list('./shotgun_mods')
+local modList = {}
+local modListFiles = {}
 
-for k, v in pairs(listOfMods) do
-    modFile = './shotgun_mods/' .. v
-    local open = fs.open(modFile, 'r')
-    local data = open.readAll()
-    open.close()
+for k, v in pairs(listOfFiles) do
+    if v ~= 'config' then
+        modFile = './shotgun_mods/' .. v
+        local open = fs.open(modFile, 'r')
+        local data = open.readAll()
+        open.close()
 
-    local fn, err = loadstring(data)
-    if err then
-        printError('Error in mod file "' .. v .. '"!\n' .. err)
-        error()
+        programEnvironment['modName'] = 'Unknown'
+        local fn, err = loadstring(data)
+        if err then
+            printError('Error in mod file "' .. v .. '"!\n' .. err)
+            error()
+        end
+        setfenv(fn, programEnvironment)
+        pcall(fn)
+        
+        concatTablesNumerically(ainums, programEnvironment['aiList'])
+        concatTablesByOverriding(ainames, programEnvironment['aiFunctions'])
+        modList[#modList+1] = programEnvironment['modName']
+        modListFiles[programEnvironment['modName']] = v
     end
-    setfenv(fn, programEnvironment)
-    pcall(fn)
-    
-    concatTablesNumerically(ainums, programEnvironment['aiList'])
-    concatTablesByOverriding(ainames, programEnvironment['aiFunctions'])
 end
 
 if ainums[1] == '\n' then
@@ -269,6 +278,169 @@ term.setCursorPos(1,1)
 local selected = 1
 local hasSelected = false
 local sectionH = screenHeight-2
+
+if args[1] and args[1]:find('mod') then -- mod loader GUI
+    modList[#modList+1] = 'Exit'
+    while true do
+        selected = 1
+        hasSelected = false
+        local chosen
+        repeat
+            term.clear()
+            term.setCursorPos(1,1)
+            setTextColourC(colours.green)
+            print('Choose a mod:')
+            local i = 0
+            for _, modName in pairs(modList) do
+                i = i + 1
+                if i == selected then
+                    setTextColourC(colours.yellow)
+                    io.write('> ')
+                    setTextColourC(colours.white)
+                    io.write(modName .. '\n')
+                elseif (i < math.floor((selected/sectionH)+1)*sectionH) and (i >= math.floor(selected/sectionH)*sectionH) then
+                    setTextColourC(colours.white)
+                    print(modName)
+                end
+            end
+        
+            local newText = 'Page '.. math.floor((selected/sectionH)+1) .. ' of ' .. math.floor((#modList/sectionH)+1)
+            term.setCursorPos(screenWidth-#newText, 1)
+            setTextColourC(colours.green)
+            write(newText)
+            setTextColourC(colours.white)
+        
+            local _, ek = os.pullEvent("key")
+            if (ek == keys.up or ek == keys.w) and selected ~= 1 then
+                selected = selected - 1
+                playSound("minecraft:ui.button.click")
+            elseif (ek == keys.down or ek == keys.s) and selected ~= #modList then
+                selected = selected + 1
+                playSound("minecraft:ui.button.click")
+            elseif (ek == keys.up or ek == keys.w) and selected == 1 then
+                selected = #modList
+                playSound("minecraft:ui.button.click")
+            elseif (ek == keys.down or ek == keys.s) and selected == #modList then
+                selected = 1
+                playSound("minecraft:ui.button.click")
+            elseif ek == keys.enter then
+                if selected == #modList then
+                    term.clear()
+                    term.setCursorPos(1,1)
+                    error()
+                end
+                chosen = modListFiles[modList[selected]]
+                hasSelected = true
+                playSound("minecraft:ui.button.click")
+            end
+            sleep(0.1)
+        until hasSelected
+
+        term.clear()
+        term.setCursorPos(1,1)
+        selected = 1
+        hasSelected = false
+        options = {'Uninstall', 'Back'}
+
+        repeat
+            term.clear()
+            term.setCursorPos(1,1)
+            setTextColourC(colours.green)
+            print('Options: ')
+
+            for i = 1, #options do
+                if i == selected then
+                    setTextColourC(colours.yellow)
+                    io.write('> ')
+                    setTextColourC(colours.white)
+                    io.write(options[i] .. '\n')
+                else
+                    setTextColourC(colours.white)
+                    print(options[i])
+                end
+            end
+        
+            local _, ek = os.pullEvent("key")
+            if (ek == keys.up or ek == keys.w) and selected ~= 1 then
+                selected = selected - 1
+                playSound("minecraft:ui.button.click")
+            elseif (ek == keys.down or ek == keys.s) and selected ~= #options then
+                selected = selected + 1
+                playSound("minecraft:ui.button.click")
+            elseif (ek == keys.up or ek == keys.w) and selected == 1 then
+                selected = #options
+                playSound("minecraft:ui.button.click")
+            elseif (ek == keys.down or ek == keys.s) and selected == #options then
+                selected = 1
+                playSound("minecraft:ui.button.click")
+            elseif ek == keys.enter then
+                if selected == #options then
+                    hasSelected = true
+                elseif selected == 1 then
+                elseif selected == 2 then
+                    playSound("minecraft:ui.button.click")
+                    selected = 1
+                    options2 = {'Yes', 'No'}
+                    repeat
+                        term.clear()
+                        term.setCursorPos(1,1)
+                        setTextColourC(colours.green)
+                        print('Are you sure you want to do this?')
+            
+                        for i = 1, #options2 do
+                            if i == selected then
+                                setTextColourC(colours.yellow)
+                                io.write('> ')
+                                setTextColourC(colours.white)
+                                io.write(options2[i] .. '\n')
+                            else
+                                setTextColourC(colours.white)
+                                print(options2[i])
+                            end
+                        end
+                    
+                        local _, ek = os.pullEvent("key")
+                        if (ek == keys.up or ek == keys.w) and selected ~= 1 then
+                            selected = selected - 1
+                            playSound("minecraft:ui.button.click")
+                        elseif (ek == keys.down or ek == keys.s) and selected ~= #options2 then
+                            selected = selected + 1
+                            playSound("minecraft:ui.button.click")
+                        elseif (ek == keys.up or ek == keys.w) and selected == 1 then
+                            selected = #options2
+                            playSound("minecraft:ui.button.click")
+                        elseif (ek == keys.down or ek == keys.s) and selected == #options2 then
+                            selected = 1
+                            playSound("minecraft:ui.button.click")
+                        elseif ek == keys.enter then
+                            playSound("minecraft:ui.button.click")
+                            if selected == 1 then
+                                fs.delete('./shotgun_mods/' .. chosen)
+                                term.clear()
+                                term.setCursorPos(1,1)
+                                setTextColourC(colours.green)
+                                print('Successfully uninstalled.')
+                                setTextColourC(colours.yellow)
+                                io.write('> ')
+                                setTextColourC(colours.white)
+                                io.write('Okay')
+                                os.pullEvent("key")
+                                playSound("minecraft:ui.button.click")
+
+                                term.clear()
+                                term.setCursorPos(1,1)
+                                error()
+                            end
+                            hasSelected = true
+                        end
+                    until hasSelected
+                end
+                playSound("minecraft:ui.button.click")
+            end
+        until hasSelected
+    end
+    error() 
+end
 
 repeat
     term.clear()
