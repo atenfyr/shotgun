@@ -58,9 +58,19 @@
         see default.lua or examplemod.lua for some examples.
 ]]
 
-if not fs.exists('shotgun_mods') then
-    fs.makeDir('shotgun_mods')
+local config = {}
+if not fs.exists('./shotgun_mods') then
+    fs.makeDir('./shotgun_mods')
 end
+if not fs.exists('./shotgun_mods/config') then
+    local h = fs.open('./shotgun_mods/config', 'w')
+    h.write('{}')
+    h.close()
+end
+
+local h = fs.open('./shotgun_mods/config', 'r')
+config = textutils.unserialise(h.readAll())
+h.close()
 
 local args = {...}
 local screenWidth, screenHeight = term.getSize()
@@ -244,8 +254,10 @@ for k, v in pairs(listOfFiles) do
         setfenv(fn, programEnvironment)
         pcall(fn)
         
-        concatTablesNumerically(ainums, programEnvironment['aiList'])
-        concatTablesByOverriding(ainames, programEnvironment['aiFunctions'])
+        if not config[v] then
+            concatTablesNumerically(ainums, programEnvironment['aiList'])
+            concatTablesByOverriding(ainames, programEnvironment['aiFunctions'])
+        end
         modList[#modList+1] = programEnvironment['modName']
         modListFiles[programEnvironment['modName']] = v
     end
@@ -340,7 +352,10 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
         term.setCursorPos(1,1)
         selected = 1
         hasSelected = false
-        options = {'Uninstall', 'Back'}
+        options = {'Disable', 'Uninstall', 'Back'}
+        if config[chosen] then
+            options[1] = 'Enable'
+        end
 
         repeat
             term.clear()
@@ -377,6 +392,19 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                 if selected == #options then
                     hasSelected = true
                 elseif selected == 1 then
+                    if not config[chosen] then
+                        config[chosen] = true
+                    else
+                        config[chosen] = false
+                    end
+                    local h = fs.open('./shotgun_mods/config', 'w')
+                    h.write(textutils.serialise(config))
+                    h.close()
+
+                    options = {'Disable', 'Uninstall', 'Back'}
+                    if config[chosen] then
+                        options[1] = 'Enable'
+                    end
                 elseif selected == 2 then
                     playSound("minecraft:ui.button.click")
                     selected = 1
