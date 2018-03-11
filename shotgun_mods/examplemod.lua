@@ -48,7 +48,7 @@ end
 --[[
     mechanics:
         odium kills you if you run out of ammo or make yourself vulnerable. 
-        you can shoot him when he tries to recharge (5 ammo or less.)
+        you can shoot him when he tries to recharge (5 ammo or less).
         he tries to make you vulnerable before then so he can incinerate you.
         however, he gives you some ammo to start because he plays fair.
 ]]
@@ -82,10 +82,10 @@ function ai_odium(currentAmmo, playerAmmo, playersLastMove, botsLastMove, player
         playSound('minecraft:block.glass.break', 1, 0)
     end
 
-    if (currentAmmo <= 5 and math.random(1,3) == 1) or (currentAmmo <= 4) then
+    if currentAmmo <= 4 then
         return 6, {15}, 'blinding', 'Blinding Light', true, colours.yellow -- recharges ammo
-    elseif currentAmmo <= 5 then
-        return 7, {currentAmmo-1}, 'protecting', 'Protective Light', true, colours.orange -- same as retaliate
+    elseif currentAmmo == 5 then
+        return 7, {currentAmmo-1}, 'protecting', 'Protective Light', true, colours.orange -- same as retaliate. confuses the player because it isn't for the next turn, it's for the current one (plus, you may get crippling right before and always die here)
     end
 
     math.randomseed(seed); math.random()
@@ -93,7 +93,7 @@ function ai_odium(currentAmmo, playerAmmo, playersLastMove, botsLastMove, player
     if move == 1 or move == 2 then
         return 2, {currentAmmo-1, nil, nil, nil, turn}, 'disorienting', 'Disorienting Light', true, colours.red -- next turn, A and D are switched (move 1 turns to 2, 2 turns to 1)
     elseif move == 3 or move == 4 then
-        return 2, {currentAmmo-1, playerAmmo-2, nil, nil, turn}, 'leeching', 'Bleeding Light', true, colours.red -- takes 2 ammo away from the player
+        return 2, {currentAmmo-1, playerAmmo-1, nil, nil, turn}, 'leeching', 'Bleeding Light', true, colours.orange -- takes 1 ammo away from the player
     elseif move == 5 then
         return 2, {currentAmmo-1, nil, nil, nil, turn}, 'noblock', 'Crippling Light', true, colours.red -- prevents blocking next turn
     elseif move == 6 or move == 7 then
