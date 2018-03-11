@@ -58,6 +58,8 @@
         see default.lua or examplemod.lua for some examples.
 ]]
 
+local sources = {'https://raw.githubusercontent.com/atenfyr/shotgun_mods/master/shotgun_repository'}
+
 local config = {}
 
 if not fs.exists('./shotgun_mods') then
@@ -135,7 +137,7 @@ local function replay(victory, t, a, la, gm, sa, hsum, forceWin)
 		end
 	end
 	print(la)
-	io.write("The game lasted ")
+	write("The game lasted ")
 	if t > 20 then
 		setTextColourC(colours.red)
 	elseif t > 10 then
@@ -145,9 +147,9 @@ local function replay(victory, t, a, la, gm, sa, hsum, forceWin)
 	else
 		setTextColourC(colours.lime)
 	end
-	io.write(t .. " turns")
+	write(t .. " turns")
 	setTextColourC(colours.white)
-	io.write(", and you had ")
+	write(", and you had ")
 	if a > 10 then
 		setTextColourC(colours.lime)
 	elseif a > 7 then
@@ -158,9 +160,9 @@ local function replay(victory, t, a, la, gm, sa, hsum, forceWin)
 		setTextColourC(colours.red)
 	end
 	if a == 0 then a = "no" end
-	io.write(a .. " ammo")
+	write(a .. " ammo")
 	setTextColourC(colours.white)
-	io.write(".\nThanks for playing!\n")
+	write(".\nThanks for playing!\n")
 	error()
 end
 
@@ -222,8 +224,10 @@ local programEnvironment = {
     playSound = playSound
 }
 
-function concatTablesNumerically(table1, table2)
-    table.insert(table2, 1, '\n')
+function concatTablesNumerically(table1, table2, addNL)
+    if addNL then
+        table.insert(table2, 1, '\n')
+    end
     for i = 1, #table2 do
         table1[#table1+1] = table2[i]
     end
@@ -259,7 +263,7 @@ for k, v in pairs(listOfFiles) do
         pcall(fn)
         
         if not config[v] then
-            concatTablesNumerically(ainums, programEnvironment['aiList'])
+            concatTablesNumerically(ainums, programEnvironment['aiList'], true)
             concatTablesByOverriding(ainames, programEnvironment['aiFunctions'])
         end
 
@@ -271,13 +275,13 @@ end
 
 if modCount == 0 then
     ainums = {}
-    local dataHandle = http.get('https://raw.githubusercontent.com/atenfyr/shotgun_mods/master/mods/default.lua', headers)
-    local open = fs.open('./shotgun_mods/default.lua', 'w')
+    local dataHandle = http.get('https://raw.githubusercontent.com/atenfyr/shotgun_mods/master/__default.lua', headers)
+    local open = fs.open('./shotgun_mods/__default.lua', 'w')
     open.write(dataHandle.readAll())
     open.close()
     dataHandle.close()
 
-    local fn, err = loadfile('./shotgun_mods/default.lua')
+    local fn, err = loadfile('./shotgun_mods/__default.lua')
     if err then
         printError('Error in mod file "' .. v .. '"!\n' .. err)
         error()
@@ -285,7 +289,7 @@ if modCount == 0 then
     setfenv(fn, programEnvironment)
     pcall(fn)
     
-    concatTablesNumerically(ainums, programEnvironment['aiList'])
+    concatTablesNumerically(ainums, programEnvironment['aiList'], true)
     concatTablesByOverriding(ainames, programEnvironment['aiFunctions'])
 
     modList[#modList+1] = programEnvironment['modName']
@@ -386,9 +390,9 @@ if isModLoader then -- mod loader GUI
                 i = i + 1
                 if i == selected then
                     setTextColourC(colours.yellow)
-                    io.write('- ')
+                    write('- ')
                     setTextColourC(colours.white)
-                    io.write(modName .. '\n')
+                    write(modName .. '\n')
                 elseif (i < math.floor((selected/sectionH)+1)*sectionH) and (i >= math.floor(selected/sectionH)*sectionH) then
                     setTextColourC(colours.white)
                     if modName == '\n' then
@@ -428,9 +432,15 @@ if isModLoader then -- mod loader GUI
                 hasSelected = true
                 if selected == #modList-1 then -- install new mods
                     playSound("minecraft:ui.button.click")
-                    local h = http.get('https://raw.githubusercontent.com/atenfyr/shotgun_mods/master/shotgun_repository', headers)
-                    local files = textutils.unserialise(h.readAll())
-                    h.close()
+                    
+                    local files = {}
+                    for _, url in pairs(sources) do
+                        local h = http.get(url, headers)
+                        local theseFiles = textutils.unserialise(h.readAll())
+                        h.close()
+
+                        concatTablesNumerically(files, theseFiles)
+                    end
 
                     files[#files+1] = {'\n', '\n'}
                     files[#files+1] = {'Back', 'Back'}
@@ -444,15 +454,23 @@ if isModLoader then -- mod loader GUI
                         for i = 1, #files do
                             if i == selected then
                                 setTextColourC(colours.yellow)
-                                io.write('- ')
+                                write('- ')
                                 setTextColourC(colours.white)
-                                io.write(files[i][1] .. '\n')
+                                if not files[i][4] then
+                                    write(files[i][1] .. '\n')
+                                else
+                                    write(files[i][1] .. ' (' .. files[i][4] .. ')\n')
+                                end
                             elseif (i < math.floor((selected/sectionH)+1)*sectionH) and (i >= math.floor(selected/sectionH)*sectionH) then
                                 setTextColourC(colours.white)
                                 if files[i][1] == '\n' then
                                     print()
                                 else
-                                    print(files[i][1])
+                                    if not files[i][4] then
+                                        write(files[i][1] .. '\n')
+                                    else
+                                        write(files[i][1] .. ' (' .. files[i][4] .. ')\n')
+                                    end
                                 end
                             end
                         end
@@ -555,9 +573,9 @@ if isModLoader then -- mod loader GUI
             for i = 1, #options do
                 if i == selected then
                     setTextColourC(colours.yellow)
-                    io.write('- ')
+                    write('- ')
                     setTextColourC(colours.white)
-                    io.write(options[i] .. '\n')
+                    write(options[i] .. '\n')
                 else
                     setTextColourC(colours.white)
                     print(options[i])
@@ -607,9 +625,9 @@ if isModLoader then -- mod loader GUI
                         for i = 1, #options2 do
                             if i == selected then
                                 setTextColourC(colours.yellow)
-                                io.write('- ')
+                                write('- ')
                                 setTextColourC(colours.white)
-                                io.write(options2[i] .. '\n')
+                                write(options2[i] .. '\n')
                             else
                                 setTextColourC(colours.white)
                                 print(options2[i])
@@ -651,9 +669,9 @@ if isModLoader then -- mod loader GUI
                                 setTextColourC(colours.green)
                                 print('Successfully uninstalled.')
                                 setTextColourC(colours.yellow)
-                                io.write('- ')
+                                write('- ')
                                 setTextColourC(colours.white)
-                                io.write('Okay')
+                                write('Okay')
                                 os.pullEvent("key")
                                 playSound("minecraft:ui.button.click")
                             end
@@ -678,9 +696,9 @@ repeat
         i = i + 1
         if i == selected then
             setTextColourC(colours.yellow)
-            io.write('- ')
+            write('- ')
             setTextColourC(colours.white)
-            io.write(ainums[i] .. '\n')
+            write(ainums[i] .. '\n')
         elseif (i < math.floor((selected/sectionH)+1)*sectionH) and (i >= math.floor(selected/sectionH)*sectionH) then
             if ainums[i] == '\n' then
                 print()
@@ -758,7 +776,7 @@ repeat
     for i = 1, #options do
         if i == selected then
             setTextColourC(colours.yellow)
-            io.write('- ')
+            write('- ')
             setTextColourC(colours.white)
         end
         print(options[i])
