@@ -742,6 +742,7 @@ end
 
 term.clear()
 term.setCursorPos(1,1)
+
 if not _G["shotgun_hasLearned"][role] then
     setTextColourC(colours.green)
     print("How to play " .. role .. ":\n")
