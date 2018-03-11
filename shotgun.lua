@@ -48,7 +48,7 @@
         99 should only be passed as a move number if isPredicting is true; it is used to tell a Prophet that the bot cannot be predicted.
 
         after returning a move number (and the number is not 92 or 93), you can pass some more arguments. the second argument is a table of values to replace.
-        the second argument has six entries in a table, in this order: {currentAmmo, playerAmmo, playerIsCursed, botIsCursed, playersCurrentMove}
+        the second argument has five entries in a table, in this order: {currentAmmo, playerAmmo, playerIsCursed, botIsCursed, playersCurrentMove}
         if the table is less than six parameters, then the values that are dropped from the end are unmodified. if a value is specified as nil, it will also remain unmodified.
         the third argument can be anything, a table, a string, a number, etc. and it will be passed to the bot function every single move as the last argument: localValues.
         if a fourth argument is passed as a string, then the move will be displayed as whatever the fourth argument is. however, prophets can see through this disguise with their Foresee ability. (if disguised, block and curse sounds are disabled; it's up to you to add those in with playSound.)

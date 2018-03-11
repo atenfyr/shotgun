@@ -45,12 +45,60 @@ function ai_emptyshell(currentAmmo, playerAmmo, playersLastMove, botsLastMove, p
     return 1 -- reload if a move has not been decided yet
 end
 
-function ai_loser()
-    return 92, '%botname% was frightened of you and ran away.'
-end
+--[[
+    mechanics:
+        odium kills you if you run out of ammo or make yourself vulnerable. 
+        you can shoot him when he tries to recharge (5 ammo or less.)
+        he tries to make you vulnerable before then so he can incinerate you.
+        however, he gives you some ammo to start because he plays fair.
+]]
+function ai_odium(currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValue)
+    if (localValue == 'curse' or playerAmmo <= 0 or currentAmmo <= 5) and isPredicting then -- about to play vaporising light or magical light prevents seeing
+        return 91
+    end
+    
+    if playersLastMove == 91 then -- first move of the game
+        return 2, {20, 15}, 'opening', 'Blinding Light', true, colours.yellow -- opening move
+    end
 
-function ai_winner()
-    return 93, '%botname% blasted you with blinding light, vaporising you instantly.'
+    local turn
+    if localValue == 'disorienting' then -- switch reload and block
+        if playersCurrentMove == 1 then
+            turn = 2
+        elseif playersCurrentMove == 2 then
+            turn = 1
+        end
+    elseif (localValue == 'noblock' and playersCurrentMove == 2) or (localValue == 'curse' and playersCurrentMove == 3) then
+        turn = 6
+    end
+    playersCurrentMove = turn or playersCurrentMove
+
+    if playerAmmo <= 0 or playersCurrentMove == 6 or playersCurrentMove == 1 then
+        playSound('minecraft:block.fire.extinguish')
+        return 93, 'You were incinerated by Odium\'s Vaporising Light.'
+    end
+
+    if playersCurrentMove == 3 and playerAmmo > 0 then
+        playSound('minecraft:block.glass.break', 1, 0)
+    end
+
+    if (currentAmmo <= 5 and math.random(1,3) == 1) or (currentAmmo <= 4) then
+        return 6, {15}, 'blinding', 'Blinding Light', true, colours.yellow -- recharges ammo
+    elseif currentAmmo <= 5 then
+        return 7, {currentAmmo-1}, 'protecting', 'Protective Light', true, colours.orange -- same as retaliate
+    end
+
+    math.randomseed(seed); math.random()
+    local move = math.random(1, 7)
+    if move == 1 or move == 2 then
+        return 2, {currentAmmo-1, nil, nil, nil, turn}, 'disorienting', 'Disorienting Light', true, colours.red -- next turn, A and D are switched (move 1 turns to 2, 2 turns to 1)
+    elseif move == 3 or move == 4 then
+        return 2, {currentAmmo-1, playerAmmo-2, nil, nil, turn}, 'leeching', 'Bleeding Light', true, colours.red -- takes 2 ammo away from the player
+    elseif move == 5 then
+        return 2, {currentAmmo-1, nil, nil, nil, turn}, 'noblock', 'Crippling Light', true, colours.red -- prevents blocking next turn
+    elseif move == 6 or move == 7 then
+        return 2, {currentAmmo-1, nil, nil, nil, turn}, 'curse', 'Magical Light', true, colours.red -- curses player (turns shoot into nothing, vaporising the player) and prevents foreseeing for next turn
+    end
 end
 
 function ai_mindcontrol(currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValues)
@@ -92,5 +140,5 @@ function ai_concealed(currentAmmo, playerAmmo, playersLastMove, botsLastMove, pl
     return botsCurrentMove, {}, {}, '???' -- hide what they are actually playing (but prophet can still see through)
 end
 
-aiList = {"Ninja", "Wizard", "Magical Shell", "Kitten", "Odium"}
-aiFunctions = {["Magical Shell"] = ai_emptyshell, ["Wizard"] = ai_mindcontrol, ["Ninja"] = ai_concealed, ["Odium"] = ai_winner, ["Kitten"] = ai_loser}
+aiList = {"Ninja", "Magical Shell", "Odium", "Wizard"}
+aiFunctions = {["Magical Shell"] = ai_emptyshell, ["Wizard"] = ai_mindcontrol, ["Ninja"] = ai_concealed, ["Odium"] = ai_odium}
