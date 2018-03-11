@@ -345,6 +345,13 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                     local files = textutils.unserialise(h.readAll())
                     h.close()
 
+                    files = textutils.unserialise([[
+                        {
+                            [1] = {'Default Bots', 'https://raw.githubusercontent.com/atenfyr/shotgun/master/shotgun_mods/default.lua'},
+                            [2] = {'Example Mod', 'https://raw.githubusercontent.com/atenfyr/shotgun/master/shotgun_mods/examplemod.lua'}
+                        }
+                    ]])
+
                     files[#files+1] = {'Back', 'Back'}
                     selected = 1
                     hasSelected = false
@@ -388,21 +395,27 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                             hasSelected = true
                             choice = files[selected][2]
                             if choice ~= 'Back' then
-                                if not modList[files[selected][1]] then
+                                if not modListFiles[files[selected][1]] then
                                     term.clear()
                                     term.setCursorPos(1,1)
                                     setTextColourC(colours.yellow)
-                                    print('Downloading..')
+                                    print('Downloading..\n')
                                     local h = http.get(choice, {['User-Agent'] = 'Shotgun/0.0.7'})
                                     local data = h.readAll()
                                     h.close()
-                                    local open = fs.open('./shotgun_mods/' .. files[selected][1], 'w')
+                                    local open = fs.open('./shotgun_mods/' .. files[selected][3], 'w')
                                     open.write(data)
                                     open.close()
                                     setTextColourC(colours.lime)
                                     print('Finished!')
                                     setTextColourC(colours.yellow)
                                     print('Press any key to continue.')
+                                    os.pullEvent('key')
+                                else
+                                    term.clear()
+                                    term.setCursorPos(1,1)
+                                    setTextColourC(colours.yellow)
+                                    print('This mod is already installed on your system.\n\nPress any key to continue.')
                                     os.pullEvent('key')
                                 end
                             else
