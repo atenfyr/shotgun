@@ -234,6 +234,9 @@ local programEnvironment = {
     plays = plays,
     xpcall = xpcall,
     parallel = parallel,
+    sleep = sleep,
+    write = write,
+    print = print,
     playSound = playSound,
     addNewMove = addNewMove
 }
