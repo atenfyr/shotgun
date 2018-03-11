@@ -339,29 +339,29 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                 selected = 1
                 playSound("minecraft:ui.button.click")
             elseif ek == keys.enter then
+                hasSelected = true
                 if selected == #modList-1 then -- install new mods
                     local h = http.get('https://raw.githubusercontent.com/atenfyr/shotgun/master/shotgun_repository', {['User-Agent'] = 'Shotgun/0.0.7'})
                     local files = textutils.unserialise(h.readAll())
                     h.close()
 
+                    files[#files+1] = {'Back', 'Back'}
                     selected = 1
                     hasSelected = false
                     repeat
                         term.clear()
                         term.setCursorPos(1,1)
                         setTextColourC(colours.green)
-                        print('Mods:')
-                        local i = 0
-                        for name, url in pairs(files) do
-                            i = i + 1
+                        print('Available mods:')
+                        for i = 1, #files do
                             if i == selected then
                                 setTextColourC(colours.yellow)
                                 io.write('> ')
                                 setTextColourC(colours.white)
-                                io.write(name .. '\n')
+                                io.write(files[i][1] .. '\n')
                             elseif (i < math.floor((selected/sectionH)+1)*sectionH) and (i >= math.floor(selected/sectionH)*sectionH) then
                                 setTextColourC(colours.white)
-                                print(name)
+                                print(files[i][1])
                             end
                         end
 
@@ -375,27 +375,49 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                         if (ek == keys.up or ek == keys.w) and selected ~= 1 then
                             selected = selected - 1
                             playSound("minecraft:ui.button.click")
-                        elseif (ek == keys.down or ek == keys.s) and selected ~= #modList then
+                        elseif (ek == keys.down or ek == keys.s) and selected ~= #files then
                             selected = selected + 1
                             playSound("minecraft:ui.button.click")
                         elseif (ek == keys.up or ek == keys.w) and selected == 1 then
-                            selected = #modList
+                            selected = #files
                             playSound("minecraft:ui.button.click")
-                        elseif (ek == keys.down or ek == keys.s) and selected == #modList then
+                        elseif (ek == keys.down or ek == keys.s) and selected == #files then
                             selected = 1
                             playSound("minecraft:ui.button.click")
                         elseif ek == keys.enter then
                             hasSelected = true
+                            choice = files[selected][2]
+                            if choice ~= 'Back' then
+                                if not modList[files[selected][1]] then
+                                    term.clear()
+                                    term.setCursorPos(1,1)
+                                    setTextColourC(colours.yellow)
+                                    print('Downloading..')
+                                    local h = http.get(choice, {['User-Agent'] = 'Shotgun/0.0.7'})
+                                    local data = h.readAll()
+                                    h.close()
+                                    local open = fs.open('./shotgun_mods/' .. files[selected][1], 'w')
+                                    open.write(data)
+                                    open.close()
+                                    setTextColourC(colours.lime)
+                                    print('Finished!')
+                                    setTextColourC(colours.yellow)
+                                    print('Press any key to continue.')
+                                    os.pullEvent('key')
+                                end
+                            else
+                                hasSelected = true
+                            end
                             playSound("minecraft:ui.button.click")
                         end
                     until hasSelected
+                    hasSelected = false
                 elseif selected == #modList then -- exit
                     term.clear()
                     term.setCursorPos(1,1)
                     error()
                 end
                 chosen = modListFiles[modList[selected]]
-                hasSelected = true
                 playSound("minecraft:ui.button.click")
             end
             sleep(0.1)
