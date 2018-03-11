@@ -6,10 +6,6 @@
 
 -- a quick guide to modding shotgun
 --[[
-    installing mods:
-        a mod can be installed by placing it in the shotgun_mods directory that is automatically generated upon first boot.
-        mods can be enabled or disabled by running "shotgun mods"
-
     generic modding:
         all bots consist of a single function which is run every turn. a mod is simply a collection of bots tied together by two tables.
         aiList is a list of numbers with the name that each bot should be assigned, and aiFunctions links the bot names to their functions.
@@ -303,14 +299,76 @@ if ainums[1] == '\n' then
     table.remove(ainums, 1)
 end
 
+local function centrePrint(str, cursorY, offset)
+    local offset = offset or 0
+    local cursorX = math.floor((screenWidth-string.len(str))/2)+offset
+    term.setCursorPos(cursorX, cursorY) 
+    write(str)
+    return cursorX
+end
+
 term.clear()
 term.setCursorPos(1,1)
 
 local selected = 1
 local hasSelected = false
 local sectionH = screenHeight-2
+local centreY = math.floor(screenHeight/2)
 
-if args[1] and args[1]:find('mod') then -- mod loader GUI
+local isModLoader = false
+
+local options = {'Play', 'Mods', 'Exit'}
+repeat
+    term.clear()
+    term.setCursorPos(1,1)
+    setTextColourC(colours.green)
+    centrePrint("-Shotgun-", centreY-#options)
+    setTextColourC(colours.white)
+    for i = 1, #options do
+        if i == selected then
+            local cursorX = centrePrint(options[i], centreY-#options+i+1)
+            setTextColourC(colours.yellow)
+            term.setCursorPos(cursorX-2, centreY-#options+i+1)
+            write('[')
+            term.setCursorPos(cursorX+string.len(options[i])+1, centreY-#options+i+1)
+            write(']')
+            setTextColourC(colours.white)
+        else
+            centrePrint(options[i], centreY-#options+i+1)
+        end
+    end
+
+    local _, ek = os.pullEvent("key")
+    if (ek == keys.up or ek == keys.w) and selected ~= 1 then
+        selected = selected - 1
+        playSound("minecraft:ui.button.click")
+    elseif (ek == keys.down or ek == keys.s) and selected ~= #options then
+        selected = selected + 1
+        playSound("minecraft:ui.button.click")
+    elseif (ek == keys.up or ek == keys.w) and selected == 1 then
+        selected = #options
+        playSound("minecraft:ui.button.click")
+    elseif (ek == keys.down or ek == keys.s) and selected == #options then
+        selected = 1
+        playSound("minecraft:ui.button.click")
+    elseif ek == keys.enter then
+        playSound("minecraft:ui.button.click")
+        if selected == 2 then
+            isModLoader = true
+        elseif selected == 3 then
+            term.clear()
+            term.setCursorPos(1,1)
+            error()
+        end
+        hasSelected = true
+    end
+    sleep(0.1)
+until hasSelected
+
+selected = 1
+hasSelected = false
+
+if isModLoader then -- mod loader GUI
     modList[#modList+1] = '\n'
     modList[#modList+1] = 'Install new mods'
     modList[#modList+1] = 'Exit'
@@ -328,7 +386,7 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                 i = i + 1
                 if i == selected then
                     setTextColourC(colours.yellow)
-                    io.write('> ')
+                    io.write('- ')
                     setTextColourC(colours.white)
                     io.write(modName .. '\n')
                 elseif (i < math.floor((selected/sectionH)+1)*sectionH) and (i >= math.floor(selected/sectionH)*sectionH) then
@@ -386,7 +444,7 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                         for i = 1, #files do
                             if i == selected then
                                 setTextColourC(colours.yellow)
-                                io.write('> ')
+                                io.write('- ')
                                 setTextColourC(colours.white)
                                 io.write(files[i][1] .. '\n')
                             elseif (i < math.floor((selected/sectionH)+1)*sectionH) and (i >= math.floor(selected/sectionH)*sectionH) then
@@ -468,6 +526,7 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                     selected = 1
                     hasSelected = false
                 elseif selected == #modList then -- exit
+                    playSound("minecraft:ui.button.click")
                     term.clear()
                     term.setCursorPos(1,1)
                     error()
@@ -496,7 +555,7 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
             for i = 1, #options do
                 if i == selected then
                     setTextColourC(colours.yellow)
-                    io.write('> ')
+                    io.write('- ')
                     setTextColourC(colours.white)
                     io.write(options[i] .. '\n')
                 else
@@ -548,7 +607,7 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                         for i = 1, #options2 do
                             if i == selected then
                                 setTextColourC(colours.yellow)
-                                io.write('> ')
+                                io.write('- ')
                                 setTextColourC(colours.white)
                                 io.write(options2[i] .. '\n')
                             else
@@ -592,7 +651,7 @@ if args[1] and args[1]:find('mod') then -- mod loader GUI
                                 setTextColourC(colours.green)
                                 print('Successfully uninstalled.')
                                 setTextColourC(colours.yellow)
-                                io.write('> ')
+                                io.write('- ')
                                 setTextColourC(colours.white)
                                 io.write('Okay')
                                 os.pullEvent("key")
@@ -619,7 +678,7 @@ repeat
         i = i + 1
         if i == selected then
             setTextColourC(colours.yellow)
-            io.write('> ')
+            io.write('- ')
             setTextColourC(colours.white)
             io.write(ainums[i] .. '\n')
         elseif (i < math.floor((selected/sectionH)+1)*sectionH) and (i >= math.floor(selected/sectionH)*sectionH) then
@@ -699,7 +758,7 @@ repeat
     for i = 1, #options do
         if i == selected then
             setTextColourC(colours.yellow)
-            io.write('> ')
+            io.write('- ')
             setTextColourC(colours.white)
         end
         print(options[i])
@@ -709,13 +768,13 @@ repeat
     if (ek == keys.up or ek == keys.w) and selected ~= 1 then
         selected = selected - 1
         playSound("minecraft:ui.button.click")
-    elseif (ek == keys.down or ek == keys.s) and selected ~= 5 then
+    elseif (ek == keys.down or ek == keys.s) and selected ~= #options then
         selected = selected + 1
         playSound("minecraft:ui.button.click")
     elseif (ek == keys.up or ek == keys.w) and selected == 1 then
-        selected = 5
+        selected = #options
         playSound("minecraft:ui.button.click")
-    elseif (ek == keys.down or ek == keys.s) and selected == 5 then
+    elseif (ek == keys.down or ek == keys.s) and selected == #options then
         selected = 1
         playSound("minecraft:ui.button.click")
     elseif ek == keys.enter then
