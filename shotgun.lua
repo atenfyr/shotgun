@@ -48,7 +48,7 @@
         99 should only be passed as a move number if isPredicting is true; it is used to tell a Prophet that the bot cannot be predicted.
 
         after returning a move number (and the number is not 92 or 93), you can pass some more arguments. the second argument is a table of values to replace.
-        the second argument has five entries in a table, in this order: {currentAmmo, playerAmmo, playerIsCursed, botIsCursed, playersCurrentMove}
+        the second argument has five entries in a table, in this order: {currentAmmo, playerAmmo, playerIsCursed, botIsCursed, playersCurrentMove, nextMoveSentence}
         if the table is less than six parameters, then the values that are dropped from the end are unmodified. if a value is specified as nil, it will also remain unmodified.
         the third argument can be anything, a table, a string, a number, etc. and it will be passed to the bot function every single move as the last argument: localValues.
         if a fourth argument is passed as a string, then the move will be displayed as whatever the fourth argument is. however, prophets can see through this disguise with their Foresee ability. (if disguised, block and curse sounds are disabled; it's up to you to add those in with playSound.)
@@ -102,8 +102,8 @@ local function playSound(snd, a, b) -- sound, volume, pitch
 	end
 end
 
-local function replay(victory, t, a, la, gm, sa, hsum)
-	if not victory and gm then
+local function replay(victory, t, a, la, gm, sa, hsum, forceWin)
+	if not victory and gm and not forceWin then
 		return
     end
 	if a < 0 then
@@ -952,11 +952,12 @@ while true do
 
     local om, modifyValues, localValuesResp, disguise = ainames[ainame](currentAmmo, ammo, tmove, mlm, cursed, aicursed, hasSuccumbed, false, move, sed, localValues)
     if om == 92 then
-        replay(true, turns, ammo, (modifyValues:gsub('%%botname%%', ainame) or "???"), godMode, specialability, hasSuccumbed)
+        replay(true, turns, ammo, (modifyValues:gsub('%%botname%%', ainame) or "???"), godMode, specialability, hasSuccumbed, true)
     elseif om == 93 then
-        replay(false, turns, ammo, (modifyValues:gsub('%%botname%%', ainame) or "???"), godMode, specialability, hasSuccumbed)
+        replay(false, turns, ammo, (modifyValues:gsub('%%botname%%', ainame) or "???"), godMode, specialability, hasSuccumbed, true)
     end
     
+    local newLastSentence
     if modifyValues and type(modifyValues) == 'table' then
         for k, v in pairs(modifyValues) do
             if v then
@@ -970,6 +971,8 @@ while true do
                     aicursed = v
                 elseif k == 5 then
                     move = v
+                elseif k == 6 then
+                    newLastSentence = v
                 end
             end
         end
@@ -979,24 +982,24 @@ while true do
         localValues = localValuesResp
     end
 
-    local last_sentence = ""
+    local lastSentence = ""
     if move == 3 and ammo <= 0 then
-        last_sentence = "You played " .. plays[move] .. ", but you had no ammo. "
+        lastSentence = "You played " .. plays[move] .. ", but you had no ammo. "
         move = 6
     elseif (move == 3 or move == 5) and (cursed == true) then
-        last_sentence = "You played " .. plays[move] .. ", but you were cursed. "
+        lastSentence = "You played " .. plays[move] .. ", but you were cursed. "
         playSound("minecraft:entity.witch.ambient")
         playedASound = true
         move = 6
     elseif (move == 5 and ammo < 4) or (move == 4 and ammo <= 0) or (move == 7 and ammo < 2) then
-        last_sentence = "You played " .. plays[move] .. ", but you didn't have enough ammo. "
+        lastSentence = "You played " .. plays[move] .. ", but you didn't have enough ammo. "
         move = 6
     else
-        last_sentence = "You played " .. plays[move] .. ". "
+        lastSentence = "You played " .. plays[move] .. ". "
     end
     if move == 8 then
         if ammo < 3 then
-            last_sentence = "You played " .. plays[move] .. ", but you didn't have enough ammo. "
+            lastSentence = "You played " .. plays[move] .. ", but you didn't have enough ammo. "
         else
             playSound("minecraft:entity.wither.spawn")
             hasSuccumbed = true
@@ -1007,22 +1010,27 @@ while true do
     
     tmove2 = move
     
+    lastSentence = lastSentence .. ainame .. " played " .. (disguise or plays[om])
     if om == 3 and currentAmmo <= 0 then
-        last_sentence = last_sentence .. ainame .. " played " .. (disguise or plays[om]) .. ", but they had no ammo."
+        lastSentence = lastSentence .. ", but they had no ammo."
         om = 6
     elseif (om == 3 or om == 5) and (aicursed == true) then
-        last_sentence = last_sentence .. ainame .. " played " .. (disguise or plays[om]) .. ", but they were cursed."
+        lastSentence = lastSentence .. ", but they were cursed."
         playSound("minecraft:entity.witch.ambient")
         playedASound = true
         om = 6
     elseif (om == 5 and currentAmmo < 4) or (om == 4 and currentAmmo <= 0) or (om == 7 and currentAmmo < 2) then
-        last_sentence = last_sentence .. ainame .. " played " .. (disguise or plays[om]) .. ", but they didn't have enough ammo."
+        lastSentence = lastSentence .. ", but they didn't have enough ammo."
         om = 6
     else
-        last_sentence = last_sentence .. ainame .. " played " .. (disguise or plays[om]) .. "."
+        lastSentence = lastSentence .. "."
     end
     mlm2 = om
-    print(last_sentence)
+
+    if newLastSentence then
+        lastSentence = newLastSentence
+    end
+    print(lastSentence)
 
     if hasSuccumbed then
         ammo = ammo - 2
@@ -1044,13 +1052,13 @@ while true do
     if move == 3 then
         ammo = ammo - 1
         if om == 1 or om == 4 or om == 5 or om == 6 then
-            replay(true, turns, ammo, last_sentence, godMode, specialability, hasSuccumbed)
+            replay(true, turns, ammo, lastSentence, godMode, specialability, hasSuccumbed)
         elseif om == 2 and not disguise then
             playSound("minecraft:entity.zombie.attack_iron_door")
         end
     elseif move == 1 then
         if om == 3 then
-            replay(false, turns, ammo, last_sentence, godMode, specialability, hasSuccumbed)
+            replay(false, turns, ammo, lastSentence, godMode, specialability, hasSuccumbed)
         else
             ammo = ammo + 1
         end
@@ -1059,25 +1067,25 @@ while true do
             ammo = ammo - 1
         end
         if om == 3 then
-            replay(false, turns, ammo, last_sentence, godMode, specialability, hasSuccumbed)
+            replay(false, turns, ammo, lastSentence, godMode, specialability, hasSuccumbed)
         end
     elseif move == 7 then
         ammo = ammo - 2
         if om == 3 then
-            replay(true, turns, ammo, last_sentence, godMode, specialability, hasSuccumbed)
+            replay(true, turns, ammo, lastSentence, godMode, specialability, hasSuccumbed)
         end
     end
     
     if om == 3 then
         currentAmmo = currentAmmo - 1
         if move == 1 or move == 4 or move == 5 or move == 6 then
-            replay(false, turns, ammo, last_sentence, godMode, specialability, hasSuccumbed)
+            replay(false, turns, ammo, lastSentence, godMode, specialability, hasSuccumbed)
         elseif move == 2 and not disguise then
             playSound("minecraft:entity.zombie.attack_iron_door")
         end
     elseif om == 1 then
         if move == 3 then
-            replay(true, turns, ammo, last_sentence, godMode, specialability, hasSuccumbed)
+            replay(true, turns, ammo, lastSentence, godMode, specialability, hasSuccumbed)
         else
             currentAmmo = currentAmmo + 1
         end
@@ -1086,12 +1094,12 @@ while true do
             currentAmmo = currentAmmo - 1
         end
         if move == 3 then
-            replay(true, turns, ammo, last_sentence, godMode, specialability, hasSuccumbed)
+            replay(true, turns, ammo, lastSentence, godMode, specialability, hasSuccumbed)
         end
     elseif om == 7 then
         currentAmmo = currentAmmo - 2
         if move == 3 then
-            replay(false, turns, ammo, last_sentence, godMode, specialability, hasSuccumbed)
+            replay(false, turns, ammo, lastSentence, godMode, specialability, hasSuccumbed)
         end
     end
     if om == 4 then
