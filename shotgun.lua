@@ -1,3 +1,9 @@
+--[[
+    Shotgun
+    Written by Atenfyr
+    Licensed under the MIT License
+]]
+
 -- a quick guide to modding shotgun
 --[[
     installing mods:
@@ -46,6 +52,8 @@
         if a fourth argument is passed as a string, then the move will be displayed as whatever the fourth argument is. however, prophets can see through this disguise with their Foresee ability. (if disguised, block and curse sounds are disabled; it's up to you to add those in with playSound.)
         if the fifth argument is set the true, prophets cannot see through a disguised move. (use this for custom abilities)
         if a sixth argument is passed, it will specify the colour that the text will appear as to a prophet. (for example, colours.orange would be valid.)
+
+        see default.lua or examplemod.lua for some examples.
 ]]
 
 if not fs.exists('shotgun_mods') then
@@ -224,7 +232,7 @@ for k, v in pairs(listOfMods) do
 
     local fn, err = loadstring(data)
     if err then
-        printError('Error in mod "' .. v:gsub('.lua', '') .. '"!\n' .. err)
+        printError('Error in mod file "' .. v .. '"!\n' .. err)
         error()
     end
     setfenv(fn, programEnvironment)
@@ -500,10 +508,16 @@ local function render(currentAmmo, playerAmmo, playersLastMove, botsLastMove, is
     setTextColourC(colours.cyan)
     print(ainame .. "'s Ammo: " .. currentAmmo)
     setTextColourC(colours.white)
+
+    --isPredicting = true
     if isPredicting then
         playSound("minecraft:entity.zombie_villager.converted")
         local result, _, _, disguise, cantSeeThrough, customColour = ainames[ainame](currentAmmo, playerAmmo, playersLastMove, botsLastMove, isCursed, botIsCursed, playerHasSuccumbed, true, playersCurrentMove, seed, localValues)
-        if plays[result] then
+        if result >= 90 and result <= 99 then -- all signals
+            setTextColourC(colours.red)
+            print("You can't seem to figure it out..")
+            setTextColourC(colours.white)
+        else
             if (result == 3) or (result == 4) or (result == 7) then
                 setTextColourC(colours.red)
             elseif (result == 1) or (result == 6) then
@@ -517,10 +531,6 @@ local function render(currentAmmo, playerAmmo, playersLastMove, botsLastMove, is
                 setTextColourC(customColour or colours.orange)
                 print(ainame .. " is about to play " .. (disguise or plays[result]) .. ".")
             end
-            setTextColourC(colours.white)
-        else
-            setTextColourC(colours.red)
-            print(ainame .. " can also see the future!")
             setTextColourC(colours.white)
         end
     end

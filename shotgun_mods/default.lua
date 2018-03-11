@@ -1,3 +1,11 @@
+--[[
+    Default Set of Bots for Shotgun
+    Written by Atenfyr
+    Licensed under the MIT License
+]]
+
+modName = 'Default Bots'
+
 local function ai_flawless(currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed)
 	if isPredicting then 
 		return 99
