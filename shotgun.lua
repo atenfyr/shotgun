@@ -1076,7 +1076,7 @@ while true do
     end
     
     newLastSentence = nil
-    
+
     if playFunctions[move] then
         runReplace(playFunctions[move](false, currentAmmo, ammo, tmove, mlm, cursed, aicursed, hasSuccumbed, false, move, sed, localValues))
     end
@@ -1093,6 +1093,13 @@ while true do
     
     if localValuesResp then
         localValues = localValuesResp
+    end
+
+    if currentAmmo < 0 then
+        currentAmmo = 0
+    end
+    if ammo < 0 then
+        ammo = 0
     end
 
     local lastSentence = ""
