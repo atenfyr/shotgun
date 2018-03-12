@@ -63,13 +63,18 @@
             addNewMove(moveID, moveName, prophetColour, behavesLike)
 
         if you wish to add new classes, the addNewClass function can be used. the syntax is as such:
-            addNewClass(name, specialAbilityMoveNumber)
+            addNewClass(name, specialAbilityMoveNumber, positionInList)
 
         in addition, custom moves can perform action on use. use the onPlay function:
             onPlay(moveNumber, function(isBot, currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValues)
                 
             end)
-        
+
+        another function is onTurn, which will run every turn and override values if necessary.
+            onTurn(function(currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValues)
+                
+            end)
+
         see default.lua or examplemod.lua for some examples.
 ]]
 
@@ -198,13 +203,15 @@ local plays = {
 
 local customPlays = {}
 local playFunctions = {}
+local turnFunctions = {}
 local specialability = 6
 local classes = {'Citizen', 'Veteran', 'Witch', 'Prophet', 'Empty Shell'}
 local classAbilities = {6, 7, 4, 5, 8}
 
-local function addNewClass(name, specialAbility)
-    classes[#classes+1] = name
-    classAbilities[#classes] = specialAbility
+local function addNewClass(name, specialAbility, positionInList)
+    positionInList = positionInList or #classes+1
+    table.insert(classes, positionInList, name)
+    table.insert(classAbilities, positionInList, specialAbility)
 end
 
 local function addNewMove(id, name, prophetColour, behavesLike)
@@ -218,6 +225,10 @@ end
 
 local function onPlay(move, f)
     playFunctions[move] = f
+end
+
+local function onTurn(f)
+    turnFunctions[#turnFunctions+1] = f
 end
 
 local ainums = {}
@@ -266,7 +277,8 @@ local programEnvironment = {
     addNewMove = addNewMove,
     setSpecialAbility = setSpecialAbility,
     addNewClass = addNewClass,
-    onPlay = onPlay
+    onPlay = onPlay,
+    onTurn = onTurn
 }
 
 function concatTablesNumerically(table1, table2, addNL)
@@ -1053,6 +1065,17 @@ while true do
     if modifyValues and type(modifyValues) == 'table' then
         runReplace(modifyValues)
     end
+
+    for _, f in pairs(turnFunctions) do
+        om2, modifyValues2, localValuesResp2, disguise2 = f(currentAmmo, ammo, tmove, mlm, cursed, aicursed, hasSuccumbed, false, move, sed, localValues)
+        if om2 then om = om2 end
+        if modifyValues2 then runReplace(modifyValues2) end
+        if localValuesResp2 then localValues = localValuesResp2 end
+        if disguise2 then disguise = disguise2 end
+    end
+
+    if om == "nothing" then om = nil end
+    if disguise == "nothing" then disguise = nil end
     
     if localValuesResp then
         localValues = localValuesResp
