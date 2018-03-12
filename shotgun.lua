@@ -321,6 +321,10 @@ for k, v in pairs(listOfFiles) do
         end
         setfenv(fn, programEnvironment)
         pcall(fn)
+
+        if programEnvironment['modName'] == 'Unknown' then
+            printError('Mod file "' .. v .. '" has not been assigned a name. Please assign it a name by defining the modName variable.')
+        end
         
         if not config[v] then
             concatTablesNumerically(ainums, programEnvironment['aiList'], true)
