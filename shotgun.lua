@@ -216,9 +216,9 @@ local function addNewClass(name, specialAbility, instructions, positionInList)
     classInstructions[name] = instructions
 end
 
-local function addNewMove(id, name, prophetColour, behavesLike)
+local function addNewMove(id, name, prophetColour, behavesLike, requiredAmmo)
     plays[id] = name
-    customPlays[id] = {name, prophetColour, behavesLike}
+    customPlays[id] = {name, prophetColour, behavesLike, requiredAmmo}
 end
 
 local function setSpecialAbility(id)
@@ -1111,7 +1111,7 @@ while true do
         playSound("minecraft:entity.witch.ambient")
         playedASound = true
         move = 6
-    elseif (move == 5 and ammo < 4) or (move == 4 and ammo <= 0) or (move == 7 and ammo < 2) then
+    elseif (move == 5 and ammo < 4) or (move == 4 and ammo <= 0) or (move == 7 and ammo < 2) or (customPlays[move] and customPlays[move][4] and ammo < customPlays[move][4]) then
         lastSentence = "You played " .. plays[move] .. ", but you didn't have enough ammo. "
         move = 6
     else
@@ -1138,11 +1138,19 @@ while true do
         playSound("minecraft:entity.witch.ambient")
         playedASound = true
         om = 6
-    elseif (om == 5 and currentAmmo < 4) or (om == 4 and currentAmmo <= 0) or (om == 7 and currentAmmo < 2) then
+    elseif (om == 5 and currentAmmo < 4) or (om == 4 and currentAmmo <= 0) or (om == 7 and currentAmmo < 2) or (customPlays[om] and customPlays[om][4] and currentAmmo < customPlays[om][4]) then
         lastSentence = lastSentence .. ", but they didn't have enough ammo."
         om = 6
     else
         lastSentence = lastSentence .. "."
+    end
+
+    if customPlays[move] and customPlays[move][4] then
+        ammo = ammo - customPlays[move][4]
+    end
+
+    if customPlays[om] and customPlays[om][4] then
+        currentAmmo = currentAmmo - customPlays[om][4]
     end
 
     if newLastSentence then
