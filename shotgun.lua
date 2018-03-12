@@ -134,7 +134,7 @@ local function playSound(snd, a, b) -- sound, volume, pitch
 	if speaker then
 		speaker.playSound(snd, a, b)
 	elseif commands then
-		commands.exec("playsound " .. snd .. " @a[r=20] ~ ~ ~ " .. (a or 1) .. " " .. (b or 1))
+		commands.exec("playsound " .. snd .. " master @a[r=20] ~ ~ ~ " .. (a or 1) .. " " .. (b or 1))
 	end
 end
 

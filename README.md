@@ -1,8 +1,19 @@
 # Shotgun
 A quick game I made for ComputerCraft that is intended to emulate the common school game that is known by several names such as Shotgun, 007, and War.
 
-The code is very, very messy and unoptimised. I'm sorry.
+# Mechanics
+Every few seconds, you can press W, A, D, or S in order to play. You can choose a bot to fight against, which will choose a move to play. In addition, you may choose a class, and each class has a special ability.
+
+W will shoot, which uses up one ammo and will kill the other player if they are vulnerable.
+A will reload, which gives you one ammo but makes you vulnerable.
+D will block, which will not use any ammo but will prevent you from being killed.
+S will activate your special ability; each class has different special moves. For instance, the Prophet can see the future, and the Witch can prevent the bot from shooting on the next turn. Usually, this ability will use at least one ammo.
+
+If both players shoot, then both players will use up one ammo and neither will die.
+
 # Installation
 Shotgun can be installed using wget:
 
 `wget https://raw.githubusercontent.com/atenfyr/shotgun/master/shotgun.lua shotgun`
+
+Shotgun uses sound extensively; you may either use a speaker from CC 1.8+, or a command computer.
