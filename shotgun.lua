@@ -807,9 +807,9 @@ repeat
 
     -- v = math.floor((selected-sectionH)/sectionH)*sectionH)
     -- ^ = math.floor((selected+sectionH)/sectionH)*sectionH)
+    term.setCursorPos(screenWidth, screenHeight-1)
     if pageCount > 1 then
         setTextColourC(colours.green)
-        term.setCursorPos(screenWidth, screenHeight-1)
         if currentPage == 1 then
             mode = 1
             setTextColourC(colours.red)
@@ -826,6 +826,11 @@ repeat
         elseif currentPage == pageCount then
             setTextColourC(colours.red)
         end
+        write('v')
+    else
+        setTextColourC(colours.red)
+        write('^')
+        term.setCursorPos(screenWidth, screenHeight)
         write('v')
     end
 
