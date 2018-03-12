@@ -79,8 +79,22 @@
 ]]
 
 local sources = {'https://raw.githubusercontent.com/atenfyr/shotgun_mods/master/shotgun_repository'}
-
 local config = {}
+
+local function pullEventTab(n, rn)
+	repeat
+		local p = {os.pullEvent()}
+		if n[p[1]] then
+			if p[1] == "timer" then
+				if p[2] == rn then
+					return unpack(p)
+				end
+			else
+				return unpack(p)
+			end
+		end
+	until false
+end
 
 if not fs.exists('./shotgun_mods') then
     fs.makeDir('./shotgun_mods')
@@ -762,12 +776,18 @@ if isModLoader then -- mod loader GUI
     error() 
 end
 
+local pageCount = math.floor((#ainums/sectionH)+1)
+local currentPage, mode
+
 repeat
     term.clear()
     term.setCursorPos(1,1)
     setTextColourC(colours.green)
     print('Choose an AI to fight: ')
+    
     local i = 0
+    local currentPage = math.floor((selected/sectionH)+1)
+
     for name, _ in pairs(ainums) do
         i = i + 1
         if i == selected then
@@ -785,35 +805,87 @@ repeat
         end
     end
 
-    local newText = 'Page '.. math.floor((selected/sectionH)+1) .. ' of ' .. math.floor((#ainums/sectionH)+1)
+    -- v = math.floor((selected-sectionH)/sectionH)*sectionH)
+    -- ^ = math.floor((selected+sectionH)/sectionH)*sectionH)
+    if pageCount > 1 then
+        setTextColourC(colours.green)
+        term.setCursorPos(screenWidth, screenHeight-1)
+        if currentPage == 1 then
+            mode = 1
+            setTextColourC(colours.red)
+        elseif currentPage == pageCount then
+            mode = 2
+        else
+            mode = 3
+        end
+        write('^')
+        term.setCursorPos(screenWidth, screenHeight)
+
+        if currentPage == 1 then
+            setTextColourC(colours.green)
+        elseif currentPage == pageCount then
+            setTextColourC(colours.red)
+        end
+        write('v')
+    end
+
+    local newText = 'Page '.. currentPage .. ' of ' .. pageCount
     term.setCursorPos(screenWidth-#newText, 1)
     setTextColourC(colours.green)
     write(newText)
     setTextColourC(colours.white)
 
-    local _, ek = os.pullEvent("key")
-    if (ek == keys.up or ek == keys.w) and selected ~= 1 then
-        selected = selected - 1
-        if ainums[selected] == '\n' then
+    local ev, ek, x, y = pullEventTab({["key"] = true, ["mouse_click"] = true})
+    if ev == "key" then
+        if (ek == keys.up or ek == keys.w) and selected ~= 1 then
             selected = selected - 1
-        end
-        playSound("minecraft:ui.button.click")
-    elseif (ek == keys.down or ek == keys.s) and selected ~= #ainums then
-        selected = selected + 1
-        if ainums[selected] == '\n' then
+            if ainums[selected] == '\n' then
+                selected = selected - 1
+            end
+            playSound("minecraft:ui.button.click")
+        elseif (ek == keys.down or ek == keys.s) and selected ~= #ainums then
             selected = selected + 1
+            if ainums[selected] == '\n' then
+                selected = selected + 1
+            end
+            playSound("minecraft:ui.button.click")
+        elseif (ek == keys.up or ek == keys.w) and selected == 1 then
+            selected = #ainums
+            playSound("minecraft:ui.button.click")
+        elseif (ek == keys.down or ek == keys.s) and selected == #ainums then
+            selected = 1
+            playSound("minecraft:ui.button.click")
+        elseif ek == keys.enter then
+            ainame = ainums[selected]
+            hasSelected = true
+            playSound("minecraft:ui.button.click")
         end
-        playSound("minecraft:ui.button.click")
-    elseif (ek == keys.up or ek == keys.w) and selected == 1 then
-        selected = #ainums
-        playSound("minecraft:ui.button.click")
-    elseif (ek == keys.down or ek == keys.s) and selected == #ainums then
+    else
+        if mode == 1 then -- v
+            if x == screenWidth and y == screenHeight then
+                selected = math.floor((selected+sectionH)/sectionH)*sectionH
+                playSound("minecraft:ui.button.click")
+            end
+        elseif mode == 2 then -- ^
+            if x == screenWidth and y == screenHeight-1 then
+                selected = math.floor((selected-sectionH)/sectionH)*sectionH
+                playSound("minecraft:ui.button.click")
+            end
+        elseif mode == 3 then -- ^ v
+            if x == screenWidth then
+                if y == screenHeight then
+                    selected = math.floor((selected+sectionH)/sectionH)*sectionH
+                    playSound("minecraft:ui.button.click")
+                elseif y == screenHeight-1 then
+                    selected = math.floor((selected-sectionH)/sectionH)*sectionH
+                    playSound("minecraft:ui.button.click")
+                end
+            end
+        end
+    end
+
+    if selected == 0 then
         selected = 1
-        playSound("minecraft:ui.button.click")
-    elseif ek == keys.enter then
-        ainame = ainums[selected]
-        hasSelected = true
-        playSound("minecraft:ui.button.click")
     end
     sleep(0.1)
 until hasSelected
@@ -918,22 +990,6 @@ end
 
 term.clear()
 term.setCursorPos(1,1)
-
-local function pullEventTab(n, rn)
-	repeat
-		local p = {os.pullEvent()}
-		if n[p[1]] then
-			if p[1] == "timer" then
-				if p[2] == rn then
-					return unpack(p)
-				end
-			else
-				return unpack(p)
-			end
-		end
-	until false
-end
-
 
 local shielded
 local cursed = false
