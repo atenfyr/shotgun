@@ -207,11 +207,13 @@ local turnFunctions = {}
 local specialability = 6
 local classes = {'Citizen', 'Veteran', 'Witch', 'Prophet', 'Empty Shell'}
 local classAbilities = {6, 7, 4, 5, 8}
+local classInstructions = {}
 
-local function addNewClass(name, specialAbility, positionInList)
+local function addNewClass(name, specialAbility, instructions, positionInList)
     positionInList = positionInList or #classes+1
     table.insert(classes, positionInList, name)
     table.insert(classAbilities, positionInList, specialAbility)
+    classInstructions[name] = instructions
 end
 
 local function addNewMove(id, name, prophetColour, behavesLike)
@@ -899,6 +901,12 @@ if not _G["shotgun_hasLearned"][role] then
     elseif role == 'Empty Shell' then
         print("Press S to Succumb. (You will become unkillable, but you will lose 2 ammo per turn until you run out of ammo and die.)")
         print("You must kill your opponent after you have Succumbed, otherwise you will lose.")
+    elseif role ~= 'Citizen' then
+        write('Press S to play ' .. plays[specialability] .. '.')
+        if classInstructions[role] then
+            write(' (' .. classInstructions[role] .. ')')
+        end
+        write('\n')
     end
     setTextColourC(colours.orange)
     print("\nPress any key to continue.")
