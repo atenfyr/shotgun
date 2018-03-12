@@ -935,7 +935,6 @@ local function pullEventTab(n, rn)
 end
 
 
-local move
 local shielded
 local cursed = false
 local aicursed = false
@@ -948,6 +947,8 @@ local currentAmmo = 0
 local tmove = 91
 local mlm = 91
 local turns = 0
+local move = 6
+local newLastSentence
 local localValues = {}
 
 if specialability == 7 then
@@ -1026,7 +1027,6 @@ while true do
     end
     render(currentAmmo, ammo, tmove, mlm, cursed, aicursed, hasSuccumbed, isPredicting, move, sed, localValues)
     
-    local move = 6
     local timern = 0
     if isPredicting then
         timern = os.startTimer(2)
@@ -1058,35 +1058,37 @@ while true do
     local disguise
 
     local om, modifyValues, localValuesResp, disguise = ainames[ainame](currentAmmo, ammo, tmove, mlm, cursed, aicursed, hasSuccumbed, false, move, sed, localValues)
+    
+    for _, f in pairs(turnFunctions) do
+        local om2, modifyValues2, localValuesResp2, disguise2 = f(currentAmmo, ammo, tmove, mlm, cursed, aicursed, hasSuccumbed, false, move, sed, localValues)
+        if om2 and om2 ~= 'nothing' then om = om2 end
+        if modifyValues2 and type(modifyValues2) == 'table' then 
+            modifyValues = modifyValues2
+        end
+        if localValuesResp2 and localValuesResp2 ~= 'nothing' then localValues = localValuesResp2 end
+        if disguise2 and disguise2 ~= 'nothing' then disguise = disguise2 end
+    end
+
     if om == 92 then
         replay(true, turns, ammo, (modifyValues:gsub('%%botname%%', ainame) or "???"), godMode, specialability, hasSuccumbed, true)
     elseif om == 93 then
         replay(false, turns, ammo, (modifyValues:gsub('%%botname%%', ainame) or "???"), godMode, specialability, hasSuccumbed, true)
     end
     
-    local newLastSentence
-
+    newLastSentence = nil
+    
     if playFunctions[move] then
         runReplace(playFunctions[move](false, currentAmmo, ammo, tmove, mlm, cursed, aicursed, hasSuccumbed, false, move, sed, localValues))
     end
 
     if playFunctions[om] then
-        runReplace(playFunctions[move](true, currentAmmo, ammo, tmove, mlm, cursed, aicursed, hasSuccumbed, false, move, sed, localValues))
+        runReplace(playFunctions[om](true, currentAmmo, ammo, tmove, mlm, cursed, aicursed, hasSuccumbed, false, move, sed, localValues))
     end
 
     if modifyValues and type(modifyValues) == 'table' then
         runReplace(modifyValues)
     end
 
-    for _, f in pairs(turnFunctions) do
-        om2, modifyValues2, localValuesResp2, disguise2 = f(currentAmmo, ammo, tmove, mlm, cursed, aicursed, hasSuccumbed, false, move, sed, localValues)
-        if om2 then om = om2 end
-        if modifyValues2 then runReplace(modifyValues2) end
-        if localValuesResp2 then localValues = localValuesResp2 end
-        if disguise2 then disguise = disguise2 end
-    end
-
-    if om == "nothing" then om = nil end
     if disguise == "nothing" then disguise = nil end
     
     if localValuesResp then
@@ -1108,6 +1110,7 @@ while true do
     else
         lastSentence = "You played " .. plays[move] .. ". "
     end
+
     if move == 8 then
         if ammo < 3 then
             lastSentence = "You played " .. plays[move] .. ", but you didn't have enough ammo. "
