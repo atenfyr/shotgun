@@ -10,7 +10,8 @@
         all bots consist of a single function which is run every turn. a mod is simply a collection of bots tied together by two tables.
         aiList is a list of numbers with the name that each bot should be assigned, and aiFunctions links the bot names to their functions.
         in addition, there must be a global variable named modName which specifies the name of the mod as shown in the mod loader.
-        there is an optional global function you may specify called init(); it will run upon boot of any of the bots. it is given one parameter; the bot which is being battled.
+        there is an optional global function you may specify called init(); it will run upon boot of any of the bots present in that mod. it is given one parameter; the bot which is being battled.
+        globalInit(); can also be specified to run as soon as shotgun boots (directly after the mods load). It is not passed any arguments.
         here is an example of a basic mod:
             function testBotFunction()
                 return 1 -- always reload
@@ -60,6 +61,14 @@
 
         if you wish to add new abilities, the addNewMove function can be used. the syntax is as such:
             addNewMove(moveID, moveName, prophetColour, behavesLike)
+
+        if you wish to add new classes, the addNewClass function can be used. the syntax is as such:
+            addNewClass(name, specialAbilityMoveNumber)
+
+        in addition, custom moves can perform action on use. use the onPlay function:
+            onPlay(moveNumber, function(isBot, currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValues)
+                
+            end)
         
         see default.lua or examplemod.lua for some examples.
 ]]
@@ -188,8 +197,15 @@ local plays = {
 }
 
 local customPlays = {}
+local playFunctions = {}
 local specialability = 6
-local knowledge = 1
+local classes = {'Citizen', 'Veteran', 'Witch', 'Prophet', 'Empty Shell'}
+local classAbilities = {6, 7, 4, 5, 8}
+
+local function addNewClass(name, specialAbility)
+    classes[#classes+1] = name
+    classAbilities[#classes] = specialAbility
+end
 
 local function addNewMove(id, name, prophetColour, behavesLike)
     plays[id] = name
@@ -198,6 +214,10 @@ end
 
 local function setSpecialAbility(id)
     specialability = id
+end
+
+local function onPlay(move, f)
+    playFunctions[move] = f
 end
 
 local ainums = {}
@@ -236,7 +256,6 @@ local programEnvironment = {
     unpack = unpack,
     __inext = __inext,
     specialability = specialability,
-    knowledge = knowledge,
     plays = plays,
     xpcall = xpcall,
     parallel = parallel,
@@ -245,11 +264,13 @@ local programEnvironment = {
     print = print,
     playSound = playSound,
     addNewMove = addNewMove,
-    setSpecialAbility = setSpecialAbility
+    setSpecialAbility = setSpecialAbility,
+    addNewClass = addNewClass,
+    onPlay = onPlay
 }
 
 function concatTablesNumerically(table1, table2, addNL)
-    if addNL then
+    if addNL and #table2 > 0 and #table1 > 0 then
         table.insert(table2, 1, '\n')
     end
     for i = 1, #table2 do
@@ -268,6 +289,9 @@ end
 local listOfFiles = fs.list('./shotgun_mods')
 local modList = {}
 local modListFiles = {}
+local globalInits = {}
+local inits = {}
+local modsAIsarefrom = {}
 local modCount = 0
 
 for k, v in pairs(listOfFiles) do
@@ -291,9 +315,15 @@ for k, v in pairs(listOfFiles) do
             concatTablesByOverriding(ainames, programEnvironment['aiFunctions'])
         end
 
+        globalInits[#globalInits+1] = programEnvironment['globalInit']
+        inits[programEnvironment['modName']] = programEnvironment['init']
         modList[#modList+1] = programEnvironment['modName']
         modListFiles[programEnvironment['modName']] = v
         modCount = modCount + 1
+
+        for _, bot in pairs(programEnvironment['aiList']) do
+            modsAIsarefrom[bot] = programEnvironment['modName']
+        end
     end
 end
 
@@ -319,6 +349,10 @@ if modCount == 0 then
     modList[#modList+1] = programEnvironment['modName']
     modListFiles[programEnvironment['modName']] = v
     modCount = modCount + 1
+end
+
+for _, f in pairs(globalInits) do
+    f()
 end
 
 ainums[#ainums+1] = '\n'
@@ -787,7 +821,6 @@ end
 local i = 0
 local selected = 1
 local hasSelected = false
-local options = {'Citizen', 'Veteran', 'Witch', 'Prophet', 'Empty Shell'}
 
 repeat
     term.clear()
@@ -795,49 +828,40 @@ repeat
     setTextColourC(colours.green)
     print("Select your class:")
     setTextColourC(colours.white)
-    for i = 1, #options do
+    for i = 1, #classes do
         if i == selected then
             setTextColourC(colours.yellow)
             write('- ')
             setTextColourC(colours.white)
         end
-        print(options[i])
+        if classes[i] == '\n' then
+            print()
+        else
+            print(classes[i])
+        end
     end
 
     local _, ek = os.pullEvent("key")
     if (ek == keys.up or ek == keys.w) and selected ~= 1 then
         selected = selected - 1
         playSound("minecraft:ui.button.click")
-    elseif (ek == keys.down or ek == keys.s) and selected ~= #options then
+    elseif (ek == keys.down or ek == keys.s) and selected ~= #classes then
         selected = selected + 1
         playSound("minecraft:ui.button.click")
     elseif (ek == keys.up or ek == keys.w) and selected == 1 then
-        selected = #options
+        selected = #classes
         playSound("minecraft:ui.button.click")
-    elseif (ek == keys.down or ek == keys.s) and selected == #options then
+    elseif (ek == keys.down or ek == keys.s) and selected == #classes then
         selected = 1
         playSound("minecraft:ui.button.click")
     elseif ek == keys.enter then
-        knowledge = selected
+        role = classes[selected]
+        specialability = classAbilities[selected]
         hasSelected = true
         playSound("minecraft:ui.button.click")
     end
     sleep(0.1)
 until hasSelected
-
-if knowledge == 2 then
-    specialability = 7
-    role = "Veteran"
-elseif knowledge == 3 then
-    specialability = 4
-    role = "Witch"
-elseif knowledge == 4 then
-    specialability = 5
-    role = "Prophet"
-elseif knowledge == 5 then
-    specialability = 8
-    role = "Empty Shell"
-end
 
 term.clear()
 term.setCursorPos(1,1)
@@ -849,14 +873,14 @@ if not _G["shotgun_hasLearned"][role] then
     print("Press W to Shoot. (Costs 1 ammo, will kill other player)")
     print("Press A to Reload. (Gives 1 ammo)")
     print("Press D to Block. (Prevents Shoot from killing you)")
-    if knowledge == 2 then
+    if role == 'Veteran' then
         print("Press S to Retaliate. (Costs 2 ammo, bullets will be reflected, killing your opponent)")
         print("Additionally, you will start the game with 2 ammo.")
-    elseif knowledge == 3 then
+    elseif role == 'Witch' then
         print("Press S to Curse. (Costs 1 ammo, your opponent can't shoot next turn.)")
-    elseif knowledge == 4 then
+    elseif role == 'Prophet' then
         print("Press S to Foresee. (Costs 4 ammo, allows you to see your opponent's next turn)")
-    elseif knowledge == 5 then
+    elseif role == 'Empty Shell' then
         print("Press S to Succumb. (You will become unkillable, but you will lose 2 ammo per turn until you run out of ammo and die.)")
         print("You must kill your opponent after you have Succumbed, otherwise you will lose.")
     end
@@ -946,7 +970,29 @@ local function render(currentAmmo, playerAmmo, playersLastMove, botsLastMove, is
     end
 end
 
-programEnvironment['init'](ainame)
+if inits[modsAIsarefrom[ainame]] then
+    inits[modsAIsarefrom[ainame]](ainame)
+end
+
+local function runReplace(modifyValues)
+    for k, v in pairs(modifyValues) do
+        if v then
+            if k == 1 then
+                currentAmmo = v
+            elseif k == 2 then
+                ammo = v
+            elseif k == 3 then
+                cursed = v
+            elseif k == 4 then
+                aicursed = v
+            elseif k == 5 then
+                move = v
+            elseif k == 6 then
+                newLastSentence = v
+            end
+        end
+    end
+end
 
 while true do
     local sed = math.random(1,9999999)
@@ -995,24 +1041,17 @@ while true do
     end
     
     local newLastSentence
+
+    if playFunctions[move] then
+        runReplace(playFunctions[move](false, currentAmmo, ammo, tmove, mlm, cursed, aicursed, hasSuccumbed, false, move, sed, localValues))
+    end
+
+    if playFunctions[om] then
+        runReplace(playFunctions[move](true, currentAmmo, ammo, tmove, mlm, cursed, aicursed, hasSuccumbed, false, move, sed, localValues))
+    end
+
     if modifyValues and type(modifyValues) == 'table' then
-        for k, v in pairs(modifyValues) do
-            if v then
-                if k == 1 then
-                    currentAmmo = v
-                elseif k == 2 then
-                    ammo = v
-                elseif k == 3 then
-                    cursed = v
-                elseif k == 4 then
-                    aicursed = v
-                elseif k == 5 then
-                    move = v
-                elseif k == 6 then
-                    newLastSentence = v
-                end
-            end
-        end
+        runReplace(modifyValues)
     end
     
     if localValuesResp then
