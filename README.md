@@ -4,12 +4,10 @@ A quick game I made for ComputerCraft that is intended to emulate the common sch
 # Mechanics
 Every few seconds, you can press W, A, D, or S in order to play. You can choose a bot to fight against, which will choose a move to play. In addition, you may choose a class, and each class has a special ability.
 
-- W will shoot, which uses up one ammo and will kill the other player if they are vulnerable.
+- W will shoot, which uses up one ammo and will kill the other player if they are vulnerable. If both the player and the bot shoot, then neither party will die.
 - A will reload, which gives you one ammo but makes you vulnerable.
 - D will block, which will not use any ammo but will prevent you from being killed.
-- S will activate your special ability; each class has different special moves. For instance, the Prophet can see the future, and the Witch can prevent the bot from shooting on the next turn. Usually, this ability will use at least one ammo.
-
-If both players shoot, then both players will use up one ammo and neither will die.
+- S will activate your special ability; each class has different special moves. For instance, the Prophet can see the future, and the Witch can prevent the bot from shooting on the next turn. Usually, these abilites will use at least one ammo.
 
 # Installation
 Shotgun can be installed using wget:
