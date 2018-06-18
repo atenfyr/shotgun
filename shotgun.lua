@@ -4,81 +4,9 @@
     Licensed under the MIT License
 ]]
 
--- a quick guide to modding shotgun
---[[
-    generic modding:
-        all bots consist of a single function which is run every turn. a mod is simply a collection of bots tied together by two tables.
-        aiList is a list of numbers with the name that each bot should be assigned, and aiFunctions links the bot names to their functions.
-        in addition, there must be a global variable named modName which specifies the name of the mod as shown in the mod loader.
-        there is an optional global function you may specify called init(); it will run upon boot of any of the bots present in that mod. it is given one parameter; the bot which is being battled.
-        globalInit(); can also be specified to run as soon as shotgun boots (directly after the mods load). It is not passed any arguments.
-        here is an example of a basic mod:
-            function testBotFunction()
-                return 1 -- always reload
-            end
-
-            function init(currentAI)
-                -- put stuff here
-            end
-
-            modName = 'Testing Mod'
-            aiList = {"Test Bot"}
-            aiInitFunctions = {["Test Bot"] = testBotInit}
-        in this case, testBotFunction is a bot function which will always reload, and the bot will be listed as Test Bot when selecting a bot to fight.
-
-    adding custom bots:
-        bot functions are passed the following arguments:
-        currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValues
-        
-        seed is used for bots that require a random element to make sure that the result is the same when predicting; if random elements are used, please use math.randomseed(seed).
-        isPredicting is a boolean that represents whether or not the function is being called in order to make a prediction.
-
-        all of these arguments can be used in order to determine a result. the result is passed by returning a move number within the function.
-        these are all the move numbers:
-        1 - Reload
-        2 - Block
-        3 - Shoot
-        4 - Curse
-        5 - Foresee
-        6 - Nothing
-        7 - Retaliate
-        8 - Succumb
-        91 - Signal: No Previous Move
-        92 - Signal: Bot Lost
-        93 - Signal: Bot Won
-        99 - Signal: Bot is Unpredictable
-
-        all move numbers from 90 to 99 are signals which can be received or passed by the bot that are not actually moves, but convey information.
-        botsLastMove and playersLastMove can be 91 to signal that this is the first turn and there is no previous move.
-        92 and 93 can be passed as move numbers to forcefully end the game with a win or loss. in this case, the second parameter returned is the last sentence. in a last sentence specified in this way, the string %botname% will be replaced with the bot's name.
-        99 should only be passed as a move number if isPredicting is true; it is used to tell a Prophet that the bot cannot be predicted.
-
-        after returning a move number (and the number is not 92 or 93), you can pass some more arguments. the second argument is a table of values to replace.
-        the second argument has five entries in a table, in this order: {currentAmmo, playerAmmo, playerIsCursed, botIsCursed, playersCurrentMove, moveSentence}
-        if the table is less than six parameters, then the values that are dropped from the end are unmodified. if a value is specified as nil, it will also remain unmodified.
-        the third argument can be anything, a table, a string, a number, etc. and it will be passed to the bot function every single move as the last argument: localValues.
-        if a fourth argument is passed as a string, then the move will be displayed as whatever the fourth argument is. however, prophets can see through this disguise with their Foresee ability. (if disguised, block and curse sounds are disabled; it's up to you to add those in with playSound.)
-
-        if you wish to add new abilities, the addNewMove function can be used. the syntax is as such:
-            addNewMove(moveID, moveName, prophetColour, behavesLike)
-
-        if you wish to add new classes, the addNewClass function can be used. the syntax is as such:
-            addNewClass(name, specialAbilityMoveNumber, positionInList)
-
-        in addition, custom moves can perform action on use. use the onPlay function:
-            onPlay(moveNumber, function(isBot, currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValues)
-                
-            end)
-
-        another function is onTurn, which will run every turn and override values if necessary.
-            onTurn(function(currentAmmo, playerAmmo, playersLastMove, botsLastMove, playerIsCursed, botIsCursed, playerHasSuccumbed, isPredicting, playersCurrentMove, seed, localValues)
-                
-            end)
-
-        see default.lua or examplemod.lua for some examples.
-]]
-
+-- send a DM to me on Discord if you want me to add your mod repository as a source or add a mod to the default repository: Atenfyr#9927
 local sources = {'https://raw.githubusercontent.com/atenfyr/shotgun_mods/master/shotgun_repository'}
+
 local config = {}
 
 local function pullEventTab(n, rn)
@@ -112,7 +40,7 @@ h.close()
 
 local args = {...}
 local screenWidth, screenHeight = term.getSize()
-local headers = {['User-Agent'] = 'Shotgun/0.0.7'}
+local headers = {['User-Agent'] = 'Shotgun/0.0.7'} -- 0.0.7 isn't an actual version, it's just a pun based off of how in some regions the game's called "007"
 
 local function setTextColourC(...)
 	if term.isColour() then
@@ -209,10 +137,10 @@ local plays = {
     [6] = "Nothing",
     [7] = "Retaliate", 
     [8] = "Succumb",
-    [91] = "Signal: No Previous Move",
-    [92] = "Signal: Bot Lost",
-    [93] = "Signal: Bot Won",
-    [99] = "Signal: Bot is Unpredictable"
+    [91] = "Signal: No Previous Move", -- used by bot AIs when they request the last move on the first move of the game
+    [92] = "Signal: Bot Lost", -- force the bot to lose
+    [93] = "Signal: Bot Won", -- force the bot to win
+    [99] = "Signal: Bot is Unpredictable" -- used by prophet
 }
 
 local customPlays = {}
@@ -383,6 +311,7 @@ if modCount == 0 then
     modCount = modCount + 1
 end
 
+-- run globalInit functions in all mods
 for _, f in pairs(globalInits) do
     f()
 end
