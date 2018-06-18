@@ -1,5 +1,5 @@
 # Shotgun
-A quick game I made for ComputerCraft that is intended to emulate the common school game that is known by several names such as Shotgun, 007, and War (not to be confused with the card game).
+A game I made for ComputerCraft that is intended to emulate the common school game that is known by several names such as Shotgun, 007, and War (not to be confused with the card game).
 
 # Mechanics
 Every few seconds, you can press W, A, D, or S in order to play. You can choose a bot to fight against, which will choose a move to play. In addition, you may choose a class, and each class has a special ability.
