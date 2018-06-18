@@ -14,4 +14,4 @@ Shotgun can be installed using wget:
 
 `wget https://raw.githubusercontent.com/atenfyr/shotgun/master/shotgun.lua shotgun`
 
-Shotgun uses sound extensively; you may either use a speaker from CC 1.8+, or a command computer.
+Shotgun uses sound extensively; if a speaker from CC 1.8+ is connected or the game is run on a command computer, audio will be enabled.
