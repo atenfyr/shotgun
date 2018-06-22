@@ -168,7 +168,15 @@ local function setSpecialAbility(id)
 end
 
 local function set(setting, value)
-    getfenv()[setting] = value
+    if setting == 'godMode' then
+        godMode = value
+    elseif setting == 'cursed' then
+        cursed = value
+    elseif setting == 'aicursed' then
+        aicursed = value
+    elseif setting == 'hasSuccumbed' then
+        hasSuccumbed = value
+    end
 end
 
 local function onPlay(move, f)
@@ -221,7 +229,7 @@ local programEnvironment = { -- the environment that mods get
 
     specialability = specialability,
     plays = plays, -- table of IDs to names
-    set = set, -- lets you set any variable. this lets you pretty much play god; please use sparingly
+    set = set,
     playSound = playSound,
     addNewMove = addNewMove,
     setSpecialAbility = setSpecialAbility,
@@ -230,7 +238,7 @@ local programEnvironment = { -- the environment that mods get
     onTurn = onTurn
 }
 
-function concatTablesNumerically(table1, table2, addNL)
+local function concatTablesNumerically(table1, table2, addNL)
     if addNL and #table2 > 0 and #table1 > 0 then
         table.insert(table2, 1, '\n')
     end
@@ -240,7 +248,7 @@ function concatTablesNumerically(table1, table2, addNL)
     return table1
 end
 
-function concatTablesByOverriding(table1, table2)
+local function concatTablesByOverriding(table1, table2)
     for k, v in pairs(table2) do
         table1[k] = v
     end
@@ -994,6 +1002,7 @@ if inits[modsAIsarefrom[ainame]] then
 end
 
 local function runReplace(modifyValues)
+    if type(modifyValues) ~= 'table' then return end
     for k, v in pairs(modifyValues) do
         if v then
             if k == 1 then
