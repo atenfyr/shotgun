@@ -15,3 +15,8 @@ Shotgun can be installed using wget:
 `wget https://raw.githubusercontent.com/atenfyr/shotgun/master/shotgun.lua shotgun`
 
 Shotgun uses sound extensively; if a speaker from CC 1.8+ is connected or the game is run on a command computer, audio will be enabled.
+
+# Mods
+Shotgun includes a built-in modding platform that you can access in the program. If you wish to manually install a mod, place a .lua file in the shotgun_mods folder automatically created by Shotgun. However, Shotgun does have a built-in collection of mods that you can install from inside the program.
+
+If you wish to view the source code of all built-in mods, see the [shotgun_mods](https://github.com/atenfyr/shotgun_mods) repository.
