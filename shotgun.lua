@@ -167,6 +167,10 @@ local function setSpecialAbility(id)
     specialability = id
 end
 
+local function set(setting, value)
+    setting = value
+end
+
 local function onPlay(move, f)
     playFunctions[move] = f
 end
@@ -179,8 +183,7 @@ local ainums = {}
 local ainames = {}
 local ainame = "Dummy"
 
-local programEnvironment = {
-    _G = _G,
+local programEnvironment = { -- the environment that mods get
     os = os,
     colors = colors,
     colours = colours,
@@ -210,13 +213,15 @@ local programEnvironment = {
     textutils = textutils,
     unpack = unpack,
     __inext = __inext,
-    specialability = specialability,
-    plays = plays,
     xpcall = xpcall,
     parallel = parallel,
     sleep = sleep,
     write = write,
     print = print,
+
+    specialability = specialability,
+    plays = plays, -- table of IDs to names
+    set = set, -- lets you set any variable. this lets you pretty much play god; please use sparingly
     playSound = playSound,
     addNewMove = addNewMove,
     setSpecialAbility = setSpecialAbility,
@@ -929,7 +934,6 @@ local shielded
 local cursed = false
 local aicursed = false
 local isPredicting = false
-local permAmmo = false
 local hasSuccumbed = false
 local godMode = false
 local ammo = 0
@@ -1011,10 +1015,7 @@ end
 
 while true do
     local sed = math.random(1,9999999)
-    turns = turns + 1f
-    if permAmmo then
-        ammo = 99
-    end
+    turns = turns + 1
     render(currentAmmo, ammo, tmove, mlm, cursed, aicursed, hasSuccumbed, isPredicting, move, sed, localValues)
     
     local timern = 0
