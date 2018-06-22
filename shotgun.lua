@@ -168,7 +168,7 @@ local function setSpecialAbility(id)
 end
 
 local function set(setting, value)
-    setting = value
+    getfenv()[setting] = value
 end
 
 local function onPlay(move, f)
