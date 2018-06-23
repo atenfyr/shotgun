@@ -143,6 +143,21 @@ local plays = {
     [99] = "Signal: Bot is Unpredictable" -- used by prophet
 }
 
+local shielded
+local cursed = false
+local aicursed = false
+local isPredicting = false
+local hasSuccumbed = false
+local godMode = false
+local ammo = 0
+local currentAmmo = 0
+local tmove = 91
+local mlm = 91
+local turns = 0
+local move = 6
+local newLastSentence
+local localValues = {}
+
 local customPlays = {}
 local playFunctions = {}
 local turnFunctions = {}
@@ -209,6 +224,7 @@ local programEnvironment = { -- the environment that mods get
     pairs = pairs,
     keys = keys,
     printError = printError,
+    error = error,
     rawequal = rawequal,
     setfenv = setfenv,
     getfenv = getfenv,
@@ -937,21 +953,6 @@ end
 
 term.clear()
 term.setCursorPos(1,1)
-
-local shielded
-local cursed = false
-local aicursed = false
-local isPredicting = false
-local hasSuccumbed = false
-local godMode = false
-local ammo = 0
-local currentAmmo = 0
-local tmove = 91
-local mlm = 91
-local turns = 0
-local move = 6
-local newLastSentence
-local localValues = {}
 
 if specialability == 7 then
 	ammo = 2
